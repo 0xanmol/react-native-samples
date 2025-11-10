@@ -4,30 +4,90 @@ This document explains all the Web3/Solana integration steps implemented in the 
 
 ## Table of Contents
 1. [Overview](#overview)
-2. [Setup & Prerequisites](#setup--prerequisites)
-3. [Wallet Connection](#wallet-connection)
-4. [Address Encoding](#address-encoding)
-5. [Transaction Signing](#transaction-signing)
-6. [Session Persistence](#session-persistence)
-7. [Error Handling](#error-handling)
-8. [Testing & Development](#testing--development)
+2. [Project Structure](#project-structure)
+3. [Setup & Prerequisites](#setup--prerequisites)
+4. [Wallet Connection](#wallet-connection)
+5. [Address Encoding](#address-encoding)
+6. [Transaction Signing](#transaction-signing)
+7. [Session Persistence](#session-persistence)
+8. [Error Handling](#error-handling)
+9. [Testing & Development](#testing--development)
 
 ---
 
 ## Overview
+An expense splitting application, similar to Splitwise. Login with wallet, add friends via their phone number or public key, create groups, split expenses, pay using SOL transfer transactions, and view transaction details on the activity page.
 
-### Why Solana?
-- **Fast transactions**: ~400ms confirmation time vs 15+ minutes on Ethereum
-- **Low fees**: Fraction of a cent per transaction vs $5-50 on Ethereum
-- **Mobile-first**: Official Mobile Wallet Adapter for React Native apps
-- **Settlement-friendly**: Perfect for P2P payment use cases like split expenses
+---
 
-### Why Mobile Wallet Adapter?
-The Solana Mobile Wallet Adapter protocol allows React Native apps to:
-- Request wallet authorization securely
-- Sign transactions without handling private keys
-- Work with any Solana wallet (Phantom, Solflare, etc.)
-- Persist sessions for better UX
+## Project Structure
+
+The frontend follows a clean, organized structure optimized for React Native development with Expo Router:
+
+```
+settle/frontend/
+├── app/                      # Expo Router app directory
+│   ├── (tabs)/              # Tab-based navigation screens
+│   │   ├── _layout.tsx      # Tab layout configuration
+│   │   ├── account.tsx      # Account/profile screen
+│   │   ├── activity.tsx     # Activity feed screen
+│   │   ├── friends.tsx      # Friends list screen
+│   │   └── groups.tsx       # Groups list screen
+│   ├── activity-detail/     # Dynamic routes
+│   │   └── [id].tsx         # Activity detail screen
+│   ├── group-detail/
+│   │   └── [id].tsx         # Group detail screen
+│   ├── _layout.tsx          # Root layout (crypto polyfill here!)
+│   ├── login.tsx            # Wallet login screen
+│   ├── signup.tsx           # User registration screen
+│   ├── add-expense.tsx      # Add expense screen
+│   ├── create-group.tsx     # Create group screen
+│   ├── settle-up.tsx        # Settle up/payment screen
+│   └── ...                  # Other screens
+├── apis/                    # API client functions
+│   ├── auth.ts              # Auth & wallet storage APIs
+│   ├── expenses.ts          # Expense management APIs
+│   ├── groups.ts            # Group management APIs
+│   ├── friends.ts           # Friends management APIs
+│   ├── activity.ts          # Activity feed APIs
+│   └── index.ts             # API exports
+├── solana/                  # Solana/Web3 integration (⭐ KEY DIRECTORY)
+│   ├── wallet.ts            # Wallet connection & authorization
+│   └── transaction.ts       # SOL transfers & transactions
+├── components/              # Reusable UI components
+│   ├── common/              # Generic components (Button, Input, etc.)
+│   ├── providers/           # React context providers
+│   │   ├── AuthorizationProvider.tsx
+│   │   ├── ConnectionProvider.tsx
+│   │   └── ThemeProvider.tsx
+│   ├── hooks/               # Custom React hooks
+│   └── ui/                  # UI-specific components
+├── constants/               # App-wide constants
+│   ├── wallet.ts            # Wallet/Solana constants
+│   ├── colors.ts            # Color palette
+│   ├── theme.ts             # Theme configuration
+│   └── typography.ts        # Typography settings
+├── utils/                   # Utility functions
+│   ├── api-client.ts        # HTTP client configuration
+│   ├── formatters.ts        # Data formatting utilities
+│   └── validators.ts        # Input validation
+├── styles/                  # Screen-specific styles
+├── types/                   # TypeScript type definitions
+│   └── index.ts             # Shared types
+└── assets/                  # Static assets (images, fonts)
+```
+
+### Key Directories for Web3 Integration
+
+- **[solana/](solana/)**: All Solana/Web3 logic is isolated here
+  - [wallet.ts](solana/wallet.ts): Wallet authorization, reauthorization, disconnection
+  - [transaction.ts](solana/transaction.ts): SOL transfers, balance checking, USD/SOL conversion
+
+- **[apis/auth.ts](apis/auth.ts)**: Wallet session persistence (AsyncStorage)
+
+- **[app/_layout.tsx](app/_layout.tsx)**: Crypto polyfill setup (MUST be first import!)
+
+- **[constants/wallet.ts](constants/wallet.ts)**: App identity, cluster configuration
 
 ---
 
@@ -127,7 +187,7 @@ getRandomValues available: true
 
 ## Wallet Connection
 
-### Implementation: `services/wallet.ts`
+### Implementation: [solana/wallet.ts](solana/wallet.ts)
 
 ```typescript
 import { transact, Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
@@ -264,39 +324,43 @@ const toBase58String = (address: any): string => {
 
 ## Transaction Signing
 
-### Implementation: `services/transaction.ts`
+### Implementation: [solana/transaction.ts](solana/transaction.ts)
 
 ```typescript
 export const sendSol = async (
   toAddress: string,
-  amountInSol: number
+  amountInUsd: number
 ): Promise<SendSolResult> => {
   // 1. Validate addresses
   if (!isValidSolanaAddress(toAddress)) {
     throw new Error('Invalid recipient wallet address...');
   }
 
-  // 2. Create connection
+  // 2. Convert USD to SOL using live price
+  const solPriceInUsd = await getSolToUsdRate();
+  const amountInSol = convertUsdToSol(amountInUsd, solPriceInUsd);
+
+  // 3. Create connection
   const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
 
-  // 3. Get recent blockhash
+  // 4. Get recent blockhash
   const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
 
-  // 4. Create transfer instruction
+  // 5. Create transfer instruction
   const transferInstruction = SystemProgram.transfer({
     fromPubkey,
     toPubkey,
     lamports: Math.floor(amountInSol * LAMPORTS_PER_SOL),
   });
 
-  // 5. Build transaction
+  // 6. Build transaction
   const transaction = new Transaction({
     feePayer: fromPubkey,
     blockhash,
     lastValidBlockHeight,
   }).add(transferInstruction);
 
-  // 6. Sign and send via wallet
+  // 7. Sign and send via wallet
   const signature = await transact(async (wallet: Web3MobileWallet) => {
     await wallet.authorize({
       cluster: SOLANA_CLUSTER,
@@ -311,7 +375,7 @@ export const sendSol = async (
     return signedTransactions[0];
   });
 
-  // 7. Wait for confirmation
+  // 8. Wait for confirmation
   const confirmation = await connection.confirmTransaction({
     signature,
     blockhash,
@@ -346,7 +410,27 @@ const isValidSolanaAddress = (address: string): boolean => {
 };
 ```
 
-#### 2. **Using `getLatestBlockhash()`**
+#### 2. **USD to SOL Conversion**
+**What**: Fetch live SOL/USD price and convert payment amounts
+**Why**:
+- Users think in USD, blockchain operates in SOL
+- CoinGecko API provides real-time pricing
+- Fallback rate (50 USD) if API fails
+- Ensures accurate payment amounts
+
+```typescript
+// solana/transaction.ts
+export const getSolToUsdRate = async (): Promise<number> => {
+  const response = await axios.get(COINGECKO_PRICE_API);
+  return response.data.solana.usd || 50; // Fallback
+};
+
+export const convertUsdToSol = (amountInUsd: number, solToUsdRate: number): number => {
+  return amountInUsd / solToUsdRate;
+};
+```
+
+#### 3. **Using `getLatestBlockhash()`**
 **What**: Get recent blockhash for transaction expiry
 **Why**:
 - Transactions expire after ~150 blocks (~1-2 minutes)
@@ -354,11 +438,9 @@ const isValidSolanaAddress = (address: string): boolean => {
 - Ensures transaction is recent and valid
 - Required for transaction confirmation
 
-#### 3. **Converting SOL to Lamports**
+#### 4. **Converting SOL to Lamports**
 **What**: `lamports = amountInSol * LAMPORTS_PER_SOL`
 **Why**:
-- Lamports are the smallest unit (like satoshis in Bitcoin)
-- 1 SOL = 1,000,000,000 lamports
 - Prevents floating-point precision issues
 - Native unit for Solana runtime
 
@@ -370,7 +452,7 @@ const lamports = Math.floor(0.001 * LAMPORTS_PER_SOL); // 1,000,000 lamports
 const sol = 0.001; // Might become 0.0009999999
 ```
 
-#### 4. **SystemProgram.transfer()**
+#### 5. **SystemProgram.transfer()**
 **What**: Built-in Solana instruction for SOL transfers
 **Why**:
 - Optimized native instruction
@@ -378,7 +460,7 @@ const sol = 0.001; // Might become 0.0009999999
 - Simpler than custom programs
 - Battle-tested and secure
 
-#### 5. **Setting `feePayer`**
+#### 6. **Setting `feePayer`**
 **What**: Specify who pays transaction fees
 **Why**:
 - Usually the sender pays fees
@@ -386,7 +468,7 @@ const sol = 0.001; // Might become 0.0009999999
 - Required field in transaction structure
 - Fees deducted from feePayer's balance
 
-#### 6. **Reusing `auth_token` for Signing**
+#### 7. **Reusing `auth_token` for Signing**
 **What**: Pass cached auth token to wallet
 **Why**:
 - Silent authorization (no popup for repeated txs)
@@ -394,7 +476,37 @@ const sol = 0.001; // Might become 0.0009999999
 - User already approved in initial connection
 - Token proves previous authorization
 
-#### 7. **Waiting for Confirmation**
+**Auto-Reauthorization Flow**: The app intelligently handles expired tokens:
+```typescript
+// solana/transaction.ts - Inside sendSol()
+try {
+  // Try transaction with cached token
+  const signature = await transact(async (wallet) => {
+    await wallet.authorize({ auth_token: cachedAuth.authToken });
+    return await wallet.signAndSendTransactions({ transactions: [transaction] });
+  });
+} catch (error) {
+  // If auth token expired, automatically reauthorize
+  if (errorMessage.includes('expired') || errorMessage.includes('auth')) {
+    const freshAuth = await reauthorizeWallet(cachedAuth.authToken);
+    await saveWalletAuth(freshAuth);
+
+    // Retry transaction with fresh token
+    const signature = await transact(async (wallet) => {
+      await wallet.authorize({ auth_token: freshAuth.authToken });
+      return await wallet.signAndSendTransactions({ transactions: [transaction] });
+    });
+  }
+}
+```
+
+**Why Auto-Reauthorization?**:
+- Gracefully handles token expiry mid-session
+- User doesn't need to manually reconnect wallet
+- Seamless experience even after long idle periods
+- Reduces friction for returning users
+
+#### 8. **Waiting for Confirmation**
 **What**: `confirmTransaction()` before returning success
 **Why**:
 - Transaction might fail after submission
@@ -407,7 +519,7 @@ const sol = 0.001; // Might become 0.0009999999
 // 'processed': Fastest, but can be rolled back
 // 'confirmed': Most common, good balance
 // 'finalized': Slowest but guaranteed (after 32 blocks)
-const connection = new Connection(RPC_URL, 'confirmed');
+const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
 ```
 
 ---
@@ -505,7 +617,7 @@ const checkCachedSession = async () => {
 ### Address Validation Errors
 
 ```typescript
-// services/transaction.ts
+// solana/transaction.ts
 if (!isValidSolanaAddress(toAddress)) {
   throw new Error(
     'Invalid recipient wallet address. The address must be a valid Solana ' +
@@ -538,7 +650,7 @@ if (confirmation.value.err) {
 ### Wallet Connection Errors
 
 ```typescript
-// services/wallet.ts
+// solana/wallet.ts
 if (errorMessage.includes('declined') || errorMessage.includes('-1')) {
   throw new Error('Wallet authorization was declined. Please try again and approve the connection.');
 } else if (errorMessage.includes('no wallet') || errorMessage.includes('not found')) {
@@ -562,26 +674,12 @@ if (errorMessage.includes('declined') || errorMessage.includes('-1')) {
 // constants/wallet.ts
 export const SOLANA_CLUSTER = 'devnet' as const;
 
-// services/transaction.ts
+// solana/transaction.ts
 const SOLANA_RPC_ENDPOINT = 'https://api.devnet.solana.com';
+const connection = new Connection(SOLANA_RPC_ENDPOINT, 'confirmed');
 ```
 
-**Why Devnet**:
-- Free test SOL from faucets
-- Same behavior as mainnet
-- Safe to experiment
-- No real money at risk
-
-**Get Free Devnet SOL**:
-```bash
-# Using Solana CLI
-solana airdrop 2 <your-address> --url devnet
-
-# Or use web faucet
-https://faucet.solana.com/
-```
-
-### Seed Data with Valid Addresses
+### Seed Data with Valid Addresses in Backend
 
 ```javascript
 // backend/scripts/seed.js
@@ -605,19 +703,8 @@ const dummyUsers = [
 
 ```typescript
 // Free public RPCs (rate limited)
-const RPC_URL = 'https://api.devnet.solana.com';
-
-// Paid RPC providers (better for production)
-// - QuickNode: https://quicknode.com
-// - Alchemy: https://alchemy.com
-// - Helius: https://helius.xyz
+const SOLANA_RPC_ENDPOINT = 'https://api.devnet.solana.com';
 ```
-
-**Why Consider Paid RPCs**:
-- Public RPCs rate limit aggressively
-- Production apps need reliability
-- Dedicated endpoints = better performance
-- WebSocket support for real-time updates
 
 ---
 
@@ -693,18 +780,66 @@ const RPC_URL = 'https://api.devnet.solana.com';
 
 ---
 
-## Changelog
+## Key Implementation Details
 
-### v1.0.0 - Initial Implementation
-- ✅ Wallet connection with Mobile Wallet Adapter
-- ✅ Base64 to base58 address conversion
-- ✅ SOL transfer transactions
-- ✅ Session persistence with auth tokens
-- ✅ Comprehensive error handling
-- ✅ Devnet integration for testing
-- ✅ Crypto polyfill setup (`react-native-get-random-values`)
+### File Organization
+
+The Web3 integration follows a clean separation of concerns:
+
+1. **[solana/wallet.ts](solana/wallet.ts)** - Wallet operations
+   - `authorizeWallet()`: Initial wallet connection
+   - `reauthorizeWallet(token)`: Silent reauth with cached token
+   - `disconnectWallet(token)`: Deauthorize and cleanup
+   - `toBase58String()`: Address format conversion
+
+2. **[solana/transaction.ts](solana/transaction.ts)** - Transaction operations
+   - `sendSol(toAddress, amountInUsd)`: Send SOL payments
+   - `getSolBalance(address)`: Query wallet balance
+   - `getSolToUsdRate()`: Fetch live SOL/USD price
+   - `convertUsdToSol()` / `convertSolToUsd()`: Currency conversion
+
+3. **[apis/auth.ts](apis/auth.ts)** - Session management
+   - `saveWalletAuth()`: Store auth token & address
+   - `getStoredWalletAuth()`: Retrieve cached session
+   - `clearWalletAuth()`: Remove session on logout
+
+4. **[app/login.tsx](app/login.tsx)** - Login flow
+   - Check for cached session on mount
+   - Auto-login if valid token exists
+   - Handle wallet connection UI
+
+5. **[app/settle-up.tsx](app/settle-up.tsx)** - Payment flow
+   - Select recipient and amount
+   - Call `sendSol()` from transaction service
+   - Display transaction status
+
+### Important Constants
+
+Solana configuration is managed in [constants/wallet.ts](constants/wallet.ts):
+
+```typescript
+// constants/wallet.ts
+export const APP_IDENTITY = {
+  name: 'Settle',
+  uri: 'https://settle.app',
+  icon: 'favicon.ico',
+};
+
+export const SOLANA_CLUSTER = 'devnet' as const;
+```
+
+**RPC Endpoint**: Currently defined locally in files that need it:
+```typescript
+// solana/transaction.ts
+const SOLANA_RPC_ENDPOINT = 'https://api.devnet.solana.com';
+
+// app/_layout.tsx
+const SOLANA_RPC_ENDPOINT = 'https://api.devnet.solana.com';
+```
+
+**To switch to mainnet**:
+1. Change `SOLANA_CLUSTER` to `'mainnet-beta'` in [constants/wallet.ts](constants/wallet.ts)
+2. Update `SOLANA_RPC_ENDPOINT` in [solana/transaction.ts](solana/transaction.ts) and [app/_layout.tsx](app/_layout.tsx)
+3. Consider using a paid RPC provider (QuickNode, Alchemy, Helius) for production
 
 ---
-
-*Last Updated: November 3, 2025*
-*Maintained by: Settle Development Team*

@@ -27,17 +27,21 @@ Express.js backend with SQLite3 database for the Settle app (Splitwise clone for
 npm install
 ```
 
-2. Create `.env` file (copy from `.env.example`):
-```bash
-cp .env.example .env
-```
+2. Configure environment:
+- Edit `.env` file if needed (default PORT=3000)
+- Change `JWT_SECRET` for production
 
 3. Initialize database:
 ```bash
 npm run init-db
 ```
 
-4. Start server:
+4. (Optional) Seed demo data:
+```bash
+npm run seed  # Only after logging in once
+```
+
+5. Start server:
 ```bash
 # Development (with nodemon)
 npm run dev
@@ -127,17 +131,20 @@ npm start
 
 ## Frontend Integration
 
-### Android Emulator
-Use `http://10.0.2.2:3000` as the API base URL
+Configure the API URL in `frontend/.env`:
 
-### iOS Simulator
-Use `http://localhost:3000` as the API base URL
+```bash
+# For Android Emulator
+EXPO_PUBLIC_API_URL=http://10.0.2.2:3000/api
 
-### Example .env configuration for frontend:
+# For iOS Simulator
+EXPO_PUBLIC_API_URL=http://localhost:3000/api
+
+# For Physical Device (replace with your computer's IP)
+EXPO_PUBLIC_API_URL=http://192.168.1.x:3000/api
 ```
-API_URL_ANDROID=http://10.0.2.2:3000/api
-API_URL_IOS=http://localhost:3000/api
-```
+
+**Note:** Expo requires the `EXPO_PUBLIC_` prefix for environment variables to be accessible in the app.
 
 ## Development
 
