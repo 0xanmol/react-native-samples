@@ -53,8 +53,7 @@ npx expo run:android
 **Tech Stack:**
 - Node.js + Express
 - SQLite3 (local database)
-- JWT authentication
-- bcryptjs for password hashing
+- JWT authentication (wallet-based)
 
 **Setup:**
 ```bash

@@ -6,8 +6,7 @@ Express.js backend with SQLite3 database for the Settle app (Splitwise clone for
 
 - **Express.js** - Web framework
 - **SQLite3** - Database
-- **JWT** - Authentication
-- **bcryptjs** - Password hashing (not used for wallet auth)
+- **JWT** - Wallet-based authentication
 
 ## Features
 

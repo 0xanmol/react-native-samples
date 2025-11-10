@@ -1,13 +1,13 @@
 # API Layer
 
-This folder contains mock API implementations that simulate backend API calls. All functions log their request/response data to the console for debugging and development purposes.
+This folder contains API client functions that communicate with the Express backend. All authentication is wallet-based using Solana public keys.
 
 ## Structure
 
 ```
 apis/
 ├── index.ts          # Central export for all APIs
-├── auth.ts           # Authentication (signup, login, logout)
+├── auth.ts           # Wallet authentication (connect, complete profile)
 ├── user.ts           # User profile management
 ├── groups.ts         # Group CRUD operations
 ├── friends.ts        # Friends management
@@ -16,10 +16,8 @@ apis/
 ├── activity.ts       # Activity feed
 ├── settings.ts       # User settings
 ├── invites.ts        # Group invitations
-├── whiteboard.ts     # Group whiteboard/notes
 ├── reports.ts        # Reports & exports
-├── search.ts         # Search functionality
-└── other.ts          # Miscellaneous (scan, timezone, etc.)
+└── search.ts         # Search functionality
 ```
 
 ## Usage
@@ -27,7 +25,7 @@ apis/
 Import the APIs you need:
 
 ```typescript
-import { signup, login } from '@/apis/auth';
+import { connectWallet, completeProfile } from '@/apis/auth';
 import { createGroup, getGroups } from '@/apis/groups';
 import { createExpense } from '@/apis/expenses';
 ```
@@ -41,17 +39,29 @@ import * as API from '@/apis';
 ## Example
 
 ```typescript
-// Signup a new user
-const handleSignup = async () => {
-  const response = await signup({
-    fullName: 'John Doe',
-    email: 'john@example.com',
-    password: 'password123',
-  });
-  
+// Connect wallet (checks if user exists, creates if new)
+const handleWalletConnect = async (pubkey: string) => {
+  const response = await connectWallet(pubkey);
+
   if (response.success) {
-    console.log('User created:', response.user);
+    if (response.data.requiresProfileCompletion) {
+      // New user - show profile completion screen
+      console.log('Complete your profile');
+    } else {
+      // Existing user - logged in
+      console.log('Welcome back:', response.data.user);
+    }
   }
+};
+
+// Complete profile for new users
+const handleCompleteProfile = async () => {
+  const response = await completeProfile({
+    name: 'John Doe',
+    phone: '+1234567890', // optional
+  });
+
+  console.log('Profile completed:', response.user);
 };
 
 // Create a group
@@ -59,10 +69,8 @@ const handleCreateGroup = async () => {
   const response = await createGroup({
     name: 'Weekend Trip',
     type: 'trip',
-    startDate: '2025-01-01',
-    endDate: '2025-01-07',
   });
-  
+
   console.log('Group created:', response.group);
 };
 ```
@@ -70,17 +78,16 @@ const handleCreateGroup = async () => {
 ## API Categories
 
 ### Authentication (`auth.ts`)
-- `signup(data)` - User registration
-- `login(data)` - Email/password login
-- `googleSignIn()` - Google OAuth
-- `logout()` - User logout
-- `forgotPassword(email)` - Password reset
+- `connectWallet(pubkey)` - Connect wallet & check if user exists
+- `completeProfile(data)` - Complete profile for new users
+- `saveWalletAuth(data)` - Save wallet auth token locally
+- `getStoredWalletAuth()` - Get cached wallet session
+- `clearWalletAuth()` - Clear wallet session
 
 ### User Profile (`user.ts`)
-- `getCurrentUser()` - Get current user
-- `updateProfile(data)` - Update profile
-- `updatePassword(currentPassword, newPassword)` - Change password
-- `uploadProfileImage(imageUri)` - Upload avatar
+- `getProfile()` - Get current user profile
+- `updateProfile(data)` - Update profile (name, phone, etc.)
+- `uploadProfileImage(file)` - Upload avatar
 - `deleteAccount()` - Delete account
 
 ### Groups (`groups.ts`)
@@ -97,10 +104,9 @@ const handleCreateGroup = async () => {
 
 ### Friends (`friends.ts`)
 - `getFriends()` - List friends
-- `addFriend(data)` - Add friend
-- `inviteFriend(data)` - Send invitation
-- `getContacts()` - Get phone contacts
+- `addFriend(data)` - Add friend by phone or pubkey
 - `removeFriend(friendId)` - Remove friend
+- `searchUsers(query)` - Search for users to add
 
 ### Expenses (`expenses.ts`)
 - `createExpense(data)` - Create expense
@@ -112,81 +118,55 @@ const handleCreateGroup = async () => {
 
 ### Balances (`balances.ts`)
 - `getBalances(groupId?)` - Get balances
-- `remindDebt(data)` - Send reminder
-- `settleUp(data)` - Process settlement
-- `addSettleUpDate(data)` - Add settlement date
-- `addPeopleToSettleUp(data)` - Add people
+- `settleUp(data)` - Record settlement (with transaction signature)
 
 ### Activity (`activity.ts`)
 - `getActivity()` - Get activity feed
 - `getActivityByGroup(groupId)` - Get group activity
 
 ### Settings (`settings.ts`)
-- `updateAccountSettings(settings)` - Update account
-- `updateEmailSettings(settings)` - Update email prefs
-- `updateSecuritySettings(settings)` - Update security
-- `manageBlocklist(action, userId)` - Manage blocks
-- `getBlocklist()` - Get blocked users
+- `getEmailSettings()` - Get email notification settings
+- `updateEmailSettings(settings)` - Update email preferences
 
 ### Invites (`invites.ts`)
-- `getInviteLink(groupId)` - Get invite link
-- `copyInviteLink(groupId)` - Copy to clipboard
-- `shareInviteLink(groupId, method)` - Share link
-- `changeInviteLink(groupId)` - Regenerate link
-- `joinGroupByLink(inviteCode)` - Join via link
-
-### Whiteboard (`whiteboard.ts`)
-- `getMessages(groupId)` - Get messages
-- `saveMessage(groupId, message)` - Save message
-- `deleteMessage(groupId, messageId)` - Delete message
-- `clearAllMessages(groupId)` - Clear all
+- `getInviteCode(groupId)` - Get group invite code
+- `joinByInviteCode(code)` - Join group via invite code
 
 ### Reports (`reports.ts`)
-- `exportExpenses(groupId?, format)` - Export data
-- `getCharts(groupId)` - Get chart data
-- `getTotals(groupId?, period)` - Get totals
-- `convertCurrency(data)` - Currency conversion
+- `getTotals(groupId?, period)` - Get spending totals
 
 ### Search (`search.ts`)
-- `searchUsers(query)` - Search users
-- `searchAll(query)` - Unified search
+- `searchUsers(query)` - Search users by name, phone, or pubkey
 
-### Other (`other.ts`)
-- `scanReceipt(imageUri)` - OCR receipt scan
-- `updateTimezone(timezone)` - Update timezone
-- `updateCurrency(currency)` - Update currency
-- `updateLanguage(language)` - Update language
+## Backend Integration
 
-## Console Logging
+All API functions use the axios client from [utils/api-client.ts](../utils/api-client.ts), which:
 
-All API functions log:
-1. **Request**: Endpoint and request body
-2. **Response**: Mock response data
+1. **Auto-adds JWT token** from AsyncStorage to all requests
+2. **Handles 401 errors** by clearing auth and redirecting to login
+3. **Configurable base URL** via `EXPO_PUBLIC_API_URL` in `.env`
 
-Example console output:
-```
-[API] Request: { endpoint: 'POST /api/auth/signup', body: { ... } }
-[API] Response: { success: true, user: { ... }, token: '...' }
-```
-
-## Future Integration
-
-When integrating with a real backend:
-1. Replace the mock implementations with actual API calls
-2. Use `fetch` or `axios` for HTTP requests
-3. Keep the same function signatures
-4. Update error handling as needed
-5. Add authentication headers/tokens
-
-Example real implementation:
+Example API call:
 ```typescript
-export const signup = async (data: SignupData): Promise<AuthResponse> => {
-  const response = await fetch('https://api.yourapp.com/auth/signup', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return response.json();
+import apiClient from '@/utils/api-client';
+
+export const getGroups = async () => {
+  const response = await apiClient.get('/groups');
+  return response.data;
 };
 ```
+
+## Authentication Flow
+
+1. User connects Solana wallet via Mobile Wallet Adapter
+2. Frontend calls `connectWallet(pubkey)` with the wallet's public key
+3. Backend checks if user exists:
+   - **Exists**: Returns JWT token + user data
+   - **New user**: Creates user, returns JWT + `requiresProfileCompletion: true`
+4. If new user, frontend shows profile completion screen
+5. User submits name (+ optional phone)
+6. Frontend calls `completeProfile(data)`
+7. User is now fully registered and logged in
+
+The JWT token is automatically added to all subsequent API requests via the axios interceptor.
 
