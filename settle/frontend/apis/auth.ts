@@ -91,13 +91,6 @@ export const storeWalletAuth = async (authToken: string, address: string): Promi
 };
 
 /**
- * Save wallet authorization data (alternative signature)
- */
-export const saveWalletAuth = async (data: { authToken: string; address: string }): Promise<void> => {
-  return AuthCache.storeWalletAuth(data.authToken, data.address);
-};
-
-/**
  * Get stored wallet authorization data from AsyncStorage
  */
 export const getStoredWalletAuth = async (): Promise<{ authToken: string; address: string } | null> => {

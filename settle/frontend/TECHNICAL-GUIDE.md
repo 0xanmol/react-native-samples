@@ -263,7 +263,7 @@ export const authorizeWallet = async (): Promise<WalletAuthResult> => {
     });
   });
 
-  const pubkey = toBase58String(authorizationResult.accounts[0].address);
+  const pubkey = toBase58(authorizationResult.accounts[0].address);
   return { pubkey, authToken: authorizationResult.auth_token, ... };
 };
 ```
@@ -414,7 +414,7 @@ export const sendSol = async (
   amountInUsd: number
 ): Promise<SendSolResult> => {
   // 1. Validate addresses
-  if (!isValidSolanaAddress(toAddress)) {
+  if (!isValidAddress(toAddress)) {
     throw new Error('Invalid recipient wallet address...');
   }
 
@@ -442,20 +442,20 @@ export const sendSol = async (
     lastValidBlockHeight,
   }).add(transferInstruction);
 
-  // 7. Sign and send via wallet
-  const signature = await transact(async (wallet: Web3MobileWallet) => {
-    await wallet.authorize({
+  // 7. Sign and send via MWA utility (handles auth and retry automatically)
+  const signature = await signWithWallet(
+    async (wallet) => {
+      const signedTransactions = await wallet.signAndSendTransactions({
+        transactions: [transaction],
+      });
+      return signedTransactions[0];
+    },
+    {
       cluster: SOLANA_CLUSTER,
       identity: APP_IDENTITY,
-      auth_token: cachedAuth.authToken,
-    });
-
-    const signedTransactions = await wallet.signAndSendTransactions({
-      transactions: [transaction],
-    });
-
-    return signedTransactions[0];
-  });
+      authToken: cachedAuth.authToken,
+    }
+  );
 
   // 8. Wait for confirmation
   const confirmation = await connection.confirmTransaction({
@@ -471,7 +471,7 @@ export const sendSol = async (
 ### Why This Flow?
 
 #### 1. **Pre-Flight Address Validation**
-**What**: Validate addresses before creating transaction
+**What**: Validate addresses before creating transaction using `isValidAddress()` from utils/mwa
 **Why**:
 - Prevent wasted RPC calls
 - Better error messages for users
@@ -479,18 +479,18 @@ export const sendSol = async (
 - Save on transaction fees (no failed txs)
 
 ```typescript
-const isValidSolanaAddress = (address: string): boolean => {
-  try {
-    if (!address || address.length < 32 || address.length > 44) {
-      return false;
-    }
-    new PublicKey(address);
-    return true;
-  } catch {
-    return false;
-  }
-};
+import { isValidAddress } from '@/utils/mwa';
+
+// Validates Solana address format (base58, 32-44 characters)
+if (!isValidAddress(toAddress)) {
+  throw new Error('Invalid recipient wallet address');
+}
 ```
+
+**Implementation** ([utils/mwa/address.ts](utils/mwa/address.ts)):
+- Checks address length (32-44 characters for base58)
+- Validates format using PublicKey constructor
+- Returns boolean (true if valid, false otherwise)
 
 #### 2. **USD to SOL Conversion**
 **What**: Fetch live SOL/USD price and convert payment amounts
@@ -558,29 +558,29 @@ const sol = 0.001; // Might become 0.0009999999
 - User already approved in initial connection
 - Token proves previous authorization
 
-**Auto-Reauthorization Flow**: The app intelligently handles expired tokens:
+**Auto-Reauthorization Flow**: The app uses the MWA utility library's `signWithWallet()` which automatically handles expired tokens:
 ```typescript
 // solana/transaction.ts - Inside sendSol()
-try {
-  // Try transaction with cached token
-  const signature = await transact(async (wallet) => {
-    await wallet.authorize({ auth_token: cachedAuth.authToken });
-    return await wallet.signAndSendTransactions({ transactions: [transaction] });
-  });
-} catch (error) {
-  // If auth token expired, automatically reauthorize
-  if (errorMessage.includes('expired') || errorMessage.includes('auth')) {
-    const freshAuth = await reauthorizeWallet(cachedAuth.authToken);
-    await saveWalletAuth(freshAuth);
-
-    // Retry transaction with fresh token
-    const signature = await transact(async (wallet) => {
-      await wallet.authorize({ auth_token: freshAuth.authToken });
-      return await wallet.signAndSendTransactions({ transactions: [transaction] });
+const signature = await signWithWallet(
+  async (wallet) => {
+    const signedTransactions = await wallet.signAndSendTransactions({
+      transactions: [transaction],
     });
+    return signedTransactions[0];
+  },
+  {
+    cluster: SOLANA_CLUSTER,
+    identity: APP_IDENTITY,
+    authToken: cachedAuth.authToken,
   }
-}
+);
 ```
+
+The `signWithWallet()` utility from `utils/mwa/transact.ts`:
+- Automatically detects auth errors using `isAuthError()`
+- Retries with fresh authorization if token expired
+- Eliminates boilerplate retry logic
+- Centralizes error handling patterns
 
 **Why Auto-Reauthorization?**:
 - Gracefully handles token expiry mid-session

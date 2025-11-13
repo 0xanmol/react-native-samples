@@ -81,6 +81,13 @@ export const AuthCache = {
 
       const parsed = JSON.parse(stored);
 
+      // Validate required fields
+      if (!parsed.selectedAccount || !parsed.accounts || !Array.isArray(parsed.accounts)) {
+        console.warn('[AuthCache] Invalid authorization data, clearing cache');
+        await this.clear();
+        return null;
+      }
+
       // Reconstruct PublicKey objects (they're not preserved in JSON)
       const authorization: Authorization = {
         ...parsed,

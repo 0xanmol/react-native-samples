@@ -15,25 +15,7 @@ import {
 } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { APP_IDENTITY, SOLANA_CLUSTER } from '@/constants/wallet';
-import { toBase58 } from '@/utils/mwa';
-
-/**
- * Account represents a wallet account with its public key
- */
-export interface Account {
-  address: string; // base58 encoded
-  label?: string;
-  publicKey: PublicKey;
-}
-
-/**
- * Authorization state containing auth token and selected account
- */
-export type Authorization = Readonly<{
-  accounts: Account[];
-  authToken: string;
-  selectedAccount: Account;
-}>;
+import { toBase58, Account, Authorization } from '@/utils/mwa';
 
 export interface AuthorizationProviderProps {
   children: ReactNode;

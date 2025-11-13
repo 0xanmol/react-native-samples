@@ -173,6 +173,19 @@ export default function CreateGroupScreen() {
     setShowEndDatePicker(false);
   };
 
+  const getGroupIcon = (type: GroupType) => {
+    switch (type) {
+      case 'home':
+        return <MaterialIcons name="home" size={28} color="#ffffff" />;
+      case 'trip':
+        return <MaterialIcons name="flight" size={28} color="#ffffff" />;
+      case 'couple':
+        return <MaterialIcons name="favorite" size={28} color="#ffffff" />;
+      default:
+        return <MaterialIcons name="list" size={28} color="#ffffff" />;
+    }
+  };
+
   const groupTypes = [
     {
       key: 'trip' as GroupType,
@@ -223,11 +236,8 @@ export default function CreateGroupScreen() {
         {/* Group Name Section */}
         <View style={styles.section}>
           <View style={styles.groupNameRow}>
-            <View style={[styles.groupImagePlaceholder, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
-              <MaterialIcons name="camera-alt" size={28} color={colors.icon} />
-              <View style={[styles.plusIcon, { backgroundColor: colors.tint, borderColor: colors.background }]}>
-                <MaterialIcons name="add" size={18} color="#FFFFFF" />
-              </View>
+            <View style={[styles.groupIconContainer, { backgroundColor: colors.tint }]}>
+              {getGroupIcon(selectedType)}
             </View>
             <View style={styles.groupNameContainer}>
               <Text style={[styles.groupNameLabel, { color: colors.text }]}>Group name</Text>
@@ -481,6 +491,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
+  },
+  groupIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   groupNameContainer: {
     flex: 1,

@@ -13,6 +13,7 @@ import { useAuthorization } from '@/components/providers/AuthorizationProvider';
 import { useConnection } from '@/components/providers/ConnectionProvider';
 import { APP_IDENTITY, SOLANA_CLUSTER } from '@/constants/wallet';
 import { Account } from './types';
+import { isAuthError } from './errors';
 
 /**
  * MWA hook return type
@@ -161,14 +162,8 @@ export function useMWA(): MWAHook {
             return signedTransactions[0];
           });
         } catch (error: any) {
-          // Check if error is due to expired/invalid auth
-          const errorMessage = error.message || '';
-          if (
-            errorMessage.includes('CancellationException') ||
-            errorMessage.includes('expired') ||
-            errorMessage.includes('invalid') ||
-            errorMessage.includes('auth')
-          ) {
+          // Check if error is due to expired/invalid auth using centralized detection
+          if (isAuthError(error)) {
             console.log('[useMWA] Auth token expired, retrying with fresh authorization...');
 
             // Retry with fresh authorization (no cached token)

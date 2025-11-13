@@ -91,7 +91,8 @@ settle/frontend/
 │       ├── address.ts       # Address conversion utilities
 │       ├── errors.ts        # Error handling utilities
 │       ├── transact.ts      # Smart transact wrappers
-│       └── types.ts         # TypeScript types
+│       ├── types.ts         # TypeScript types
+│       └── index.ts         # Main exports
 ├── solana/                  # Web3 integration
 │   ├── wallet.ts            # Wallet connection & authorization
 │   └── transaction.ts       # SOL transfers & transactions

@@ -80,7 +80,7 @@ const handleCreateGroup = async () => {
 ### Authentication (`auth.ts`)
 - `connectWallet(pubkey)` - Connect wallet & check if user exists
 - `completeProfile(data)` - Complete profile for new users
-- `saveWalletAuth(data)` - Save wallet auth token locally
+- `storeWalletAuth(authToken, address)` - Store wallet auth token locally
 - `getStoredWalletAuth()` - Get cached wallet session
 - `clearWalletAuth()` - Clear wallet session
 

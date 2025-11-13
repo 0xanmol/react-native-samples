@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { transact, Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import {
   Connection,
   PublicKey,
@@ -8,9 +7,8 @@ import {
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
 import { APP_IDENTITY, SOLANA_CLUSTER, SOLANA_RPC_ENDPOINT } from '@/constants/wallet';
-import { getStoredWalletAuth, saveWalletAuth } from '@/apis/auth';
-import { reauthorizeWallet } from './wallet';
-import { isAuthError, isValidAddress } from '@/utils/mwa';
+import { getStoredWalletAuth } from '@/apis/auth';
+import { isValidAddress, signWithWallet } from '@/utils/mwa';
 
 const COINGECKO_PRICE_API = 'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd';
 
@@ -118,23 +116,24 @@ export const sendSol = async (
   }).add(transferInstruction);
 
   try {
-    // Attempt transaction with cached auth
-    const signature = await transact(async (wallet: Web3MobileWallet) => {
-      await wallet.authorize({
+    // Sign and send transaction using MWA utility (handles auth and retry automatically)
+    const signature = await signWithWallet(
+      async (wallet) => {
+        const signedTransactions = await wallet.signAndSendTransactions({
+          transactions: [transaction],
+        });
+        return signedTransactions[0];
+      },
+      {
         cluster: SOLANA_CLUSTER,
         identity: APP_IDENTITY,
-        auth_token: cachedAuth.authToken,
-      });
-
-      const signedTransactions = await wallet.signAndSendTransactions({
-        transactions: [transaction],
-      });
-
-      return signedTransactions[0];
-    });
+        authToken: cachedAuth.authToken,
+      }
+    );
 
     console.log('Transaction sent successfully:', signature);
 
+    // Confirm transaction
     const confirmation = await connection.confirmTransaction({
       signature,
       blockhash,
@@ -152,65 +151,6 @@ export const sendSol = async (
     };
   } catch (error: any) {
     console.error('Send SOL error:', error);
-
-    // Check if error is due to expired/invalid auth token
-    if (isAuthError(error)) {
-      console.log('Auth token expired, attempting to reauthorize...');
-
-      try {
-        // Reauthorize wallet to get fresh token
-        const freshAuth = await reauthorizeWallet(cachedAuth.authToken);
-
-        // Save the fresh auth
-        await saveWalletAuth({
-          address: freshAuth.pubkey,
-          authToken: freshAuth.authToken,
-        });
-
-        console.log('Wallet reauthorized, retrying transaction...');
-
-        // Retry transaction with fresh auth
-        const signature = await transact(async (wallet: Web3MobileWallet) => {
-          await wallet.authorize({
-            cluster: SOLANA_CLUSTER,
-            identity: APP_IDENTITY,
-            auth_token: freshAuth.authToken,
-          });
-
-          const signedTransactions = await wallet.signAndSendTransactions({
-            transactions: [transaction],
-          });
-
-          return signedTransactions[0];
-        });
-
-        console.log('Transaction sent successfully after reauth:', signature);
-
-        const confirmation = await connection.confirmTransaction({
-          signature,
-          blockhash,
-          lastValidBlockHeight,
-        });
-
-        if (confirmation.value.err) {
-          throw new Error('Transaction failed: ' + JSON.stringify(confirmation.value.err));
-        }
-
-        return {
-          success: true,
-          signature,
-          message: 'Payment sent successfully',
-        };
-      } catch (reAuthError: any) {
-        console.error('Reauthorization and retry failed:', reAuthError);
-        return {
-          success: false,
-          message: reAuthError.message || 'Failed to send payment after reauthorization',
-        };
-      }
-    }
-
-    // If not an auth error, return the original error
     return {
       success: false,
       message: error.message || 'Failed to send payment',
