@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, View, StyleSheet, Pressable, Image } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { AnimatedSplash } from '@/components/animated-splash';
+import Toast from 'react-native-toast-message';
 
 export default function SignIn() {
   const { signIn, isLoading, isAuthenticated } = useAuth();
@@ -54,8 +55,22 @@ export default function SignIn() {
               <Pressable
                 style={styles.connectButton}
                 onPress={async () => {
-                  await signIn();
-                  router.replace('/');
+                  try {
+                    await signIn();
+                    router.replace('/');
+                  } catch (error: any) {
+                    // Don't show error for user cancellation
+                    const message = error?.message || 'Failed to connect wallet';
+                    if (!message.includes('cancel')) {
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Connection Failed',
+                        text2: message,
+                        position: 'top',
+                        visibilityTime: 4000,
+                      });
+                    }
+                  }
                 }}
               >
                 <LinearGradient

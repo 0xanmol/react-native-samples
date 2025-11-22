@@ -17,6 +17,7 @@ import { useAuth } from '@/components/auth/auth-provider';
 import { router, Redirect } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { ellipsify } from '@/utils/ellipsify';
+import Toast from 'react-native-toast-message';
 
 export default function Index() {
   const { isAuthenticated, signOut, selectedAccount } = useAuth();
@@ -37,6 +38,27 @@ export default function Index() {
         .finally(() => setIsLoadingDomain(false));
     }
   }, [selectedAccount?.publicKey]);
+
+  // Show toast notifications for search results
+  useEffect(() => {
+    if (result.error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Lookup Failed',
+        text2: result.error,
+        position: 'top',
+        visibilityTime: 4000,
+      });
+    } else if (result.result) {
+      Toast.show({
+        type: 'success',
+        text1: 'Found!',
+        text2: searchMode === 'domain' ? 'Wallet address found' : 'Domain found',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+    }
+  }, [result.error, result.result]);
 
   if (!isAuthenticated) {
     return <Redirect href="/sign-in" />;
@@ -235,13 +257,6 @@ export default function Index() {
               </View>
             )}
 
-            {/* Error Section */}
-            {result.error && (
-              <View style={styles.errorSection}>
-                <AppText style={styles.errorTitle}>Error</AppText>
-                <AppText style={styles.errorMessage}>{result.error}</AppText>
-              </View>
-            )}
             </ScrollView>
           </Animated.View>
         </View>
@@ -454,23 +469,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  errorSection: {
-    backgroundColor: '#fee2e2',
-    borderRadius: 16,
-    padding: 20,
-    gap: 12,
-    borderWidth: 2,
-    borderColor: '#ef4444',
-  },
-  errorTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#ef4444',
-  },
-  errorMessage: {
-    fontSize: 14,
-    color: '#64748b',
-    lineHeight: 20,
   },
 });
