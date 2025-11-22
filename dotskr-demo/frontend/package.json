@@ -9,15 +9,12 @@
     "doctor": "npx -y expo-doctor@latest",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
-    "ios": "expo run:ios",
     "lint": "expo lint --fix",
     "lint:check": "expo lint",
-    "reset-project": "node ./scripts/reset-project.js",
-    "start": "expo start",
-    "web": "expo start --web"
+    "start": "expo start"
   },
-  "displayName": "Mobile Expo Boilerplate",
-  "description": "A template for building a Solana mobile app with Expo and React Native.",
+  "displayName": "dotskr demo",
+  "description": "A Solana Name Service lookup app for .skr domains.",
   "usecase": "Mobile",
   "keywords": [
     "expo",
