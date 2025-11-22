@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "Domain Expansion",
-    "slug": "domain-expansion",
+    "name": "dotskr demo",
+    "slug": "skr-demo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "domainexpansion",
+    "scheme": "skrdemo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.domainexpansion.app"
+      "bundleIdentifier": "com.skrdemo.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.domainexpansion.app"
+      "package": "com.skrdemo.app"
     },
     "web": {
       "bundler": "metro",

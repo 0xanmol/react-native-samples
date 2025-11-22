@@ -1,7 +1,7 @@
 {
-  "name": "domain-expansion-backend",
+  "name": "skr-demo-backend",
   "version": "1.0.0",
-  "description": "Backend API for domain resolution using tldparser",
+  "description": "Backend API for .skr domain resolution using tldparser",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node src/index.ts",

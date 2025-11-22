@@ -3,8 +3,8 @@ import { Cluster } from '@/components/cluster/cluster'
 import { ClusterNetwork } from '@/components/cluster/cluster-network'
 
 export class AppConfig {
-  static name = 'Domain Expansion'
-  static uri = 'https://domainexpansion.app'
+  static name = 'dotskr demo'
+  static uri = 'https://skrdemo.app'
   static clusters: Cluster[] = [
     {
       id: 'solana:mainnet',
