@@ -10,7 +10,7 @@
 
 | Sign In | Wallet Popup | Domain Lookup | Address Lookup |
 |:---:|:---:|:---:|:---:|
-| <img width="180" alt="signin" src="https://github.com/user-attachments/assets/d2f31f64-127e-4a3c-80ac-d01ea4588d8f" /> | <img width="180" alt="wallet popup" src="https://github.com/user-attachments/assets/db412fb7-7c75-4243-98fe-abfb713fea5c" /> | <img width="180" alt="domain lookup" src="https://github.com/user-attachments/assets/46cee9c0-4ae7-412d-b978-d902437d95e7" /> | <img width="180" alt="address lookup" src="https://github.com/user-attachments/assets/d0cf991e-5364-43d8-a152-71bd0cf609f3" /> |
+| <img width="180" alt="signin" src="https://github.com/user-attachments/assets/4ccc3c36-7032-4d39-8b1b-80b73455fe30" /> | <img width="180" alt="wallet popup" src="https://github.com/user-attachments/assets/db412fb7-7c75-4243-98fe-abfb713fea5c" /> | <img width="180" alt="domain lookup" src="https://github.com/user-attachments/assets/46cee9c0-4ae7-412d-b978-d902437d95e7" /> | <img width="180" alt="address lookup" src="https://github.com/user-attachments/assets/d0cf991e-5364-43d8-a152-71bd0cf609f3" /> |
 
 | No .skr Domain | With .skr Domain |
 |:---:|:---:|
