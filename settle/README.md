@@ -52,6 +52,7 @@ Settle is a **demo application** showcasing how to integrate Solana Mobile Walle
 
 **Key Features:**
 - Wallet-based authentication (Solana Mobile Wallet Adapter)
+- **AllDomains (.skr) integration** - Display user-friendly domains instead of public keys
 - Add friends via phone number or public key
 - Create expense groups and track shared costs
 - Split expenses with flexible allocation
@@ -97,6 +98,7 @@ npx expo run:android
 - Node.js + Express
 - SQLite3 (local database)
 - JWT authentication (wallet-based)
+- AllDomains SDK (@onsol/tldparser) - .skr domain resolution
 
 **Setup:**
 ```bash

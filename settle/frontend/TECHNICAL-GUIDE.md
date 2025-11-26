@@ -14,8 +14,8 @@ This document explains all the Web3/Solana integration steps implemented in the 
 5. [Address Encoding](#address-encoding)
 6. [Transaction Signing](#transaction-signing)
 7. [Session Persistence](#session-persistence)
-8. [Error Handling](#error-handling)
-9. [Testing & Development](#testing--development)
+8. [AllDomains (.skr) Integration](#alldomains-skr-integration)
+9. [Common Issues & Solutions](#common-issues--solutions)
 
 ---
 
@@ -700,6 +700,95 @@ const checkCachedSession = async () => {
 - User expects full disconnect
 - Prevents unauthorized access if device shared
 - Allows fresh start on next login
+
+---
+
+## AllDomains (.skr) Integration
+
+### Overview
+
+The app integrates with **AllDomains SDK** to display user-friendly `.skr` domains instead of raw Solana public keys throughout the interface. This provides a better user experience similar to ENS domains on Ethereum.
+
+**Example**:
+- **Without domains**: `7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU`
+- **With domains**: `alice.skr`
+
+### How It Works
+
+#### Backend Domain Resolution
+
+The backend (Express API) automatically resolves .skr domains when users connect their wallet:
+
+1. **During Wallet Connection** ([backend/routes/auth.js](../backend/routes/auth.js)):
+   - User connects wallet via Mobile Wallet Adapter
+   - Backend receives the public key
+   - Queries Solana blockchain using AllDomains SDK (`@onsol/tldparser`)
+   - Stores resolved domain in database (`skr_domain` column)
+   - Returns domain along with user data
+
+2. **API Responses**:
+   - All user-related endpoints include `skr_domain` field
+   - Friends list, group members, balances all include domains
+   - Frontend receives domain data without additional API calls
+
+**Tech Stack (Backend)**:
+- `@onsol/tldparser` - AllDomains SDK for .skr domain resolution
+- `@solana/web3.js` - Solana blockchain connection
+
+#### Frontend Display Logic
+
+The frontend receives domain data from API responses and displays it wherever wallet addresses are shown:
+
+**TypeScript Interfaces** include `skr_domain` field:
+
+**Display Pattern** - Show domain with fallback to public key:
+
+```typescript
+// Pattern used throughout the app
+{userData?.skr_domain || userData?.pubkey || 'Not connected'}
+```
+
+### Why This Approach?
+
+#### 1. **Backend Resolution**
+**What**: Domain resolution happens on server, not client
+**Why**:
+- No need to query blockchain from mobile app
+- Better performance (resolved once, cached)
+
+#### 2. **Display Pattern: Domain OR Public Key**
+**What**: Show domain if available, fallback to public key
+**Why**:
+- Graceful degradation for users without domains
+
+**Display Hierarchy**:
+```
+[Primary] Display Name: "Alice Smith"
+[Secondary] Wallet ID: "alice.skr" or "7xKXtg2C...AsU"
+```
+
+### Configuration
+
+**Backend** (`.env`):
+```bash
+SOLANA_RPC_ENDPOINT=https://api.mainnet-beta.solana.com
+```
+
+**Frontend**: No additional configuration needed. Domain data comes from API responses.
+
+### Related Files
+
+**Backend**:
+- [backend/routes/auth.js](../backend/routes/auth.js) - Domain resolution logic
+- [backend/db/schema.sql](../backend/db/schema.sql) - Database schema with `skr_domain` column
+- [backend/routes/friends.js](../backend/routes/friends.js) - Friends API with domain data
+- [backend/routes/groups.js](../backend/routes/groups.js) - Groups API with domain data
+
+**Frontend**:
+- [app/(tabs)/account.tsx](app/(tabs)/account.tsx) - Account screen showing user's domain
+- [app/group-settings.tsx](app/group-settings.tsx) - Group members with domains
+- [apis/friends.ts](apis/friends.ts) - Friend interface with `skr_domain`
+- [apis/groups.ts](apis/groups.ts) - GroupMember interface with `skr_domain`
 
 ---
 

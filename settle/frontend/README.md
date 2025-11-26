@@ -9,6 +9,7 @@
 ## Features
 
 - Connect Solana wallet via Mobile Wallet Adapter
+- **Display .skr domains** - Shows user-friendly AllDomains (.skr) instead of public keys
 - Add friends via phone number or public key
 - Create groups and split expenses
 - Send SOL payments with automatic USD conversion
