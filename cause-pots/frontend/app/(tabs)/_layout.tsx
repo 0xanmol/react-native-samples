@@ -2,8 +2,13 @@ import { CustomTabBar } from '@/components/tab-bar/custom-tab-bar'
 import { ScrollProvider } from '@/components/tab-bar/scroll-context'
 import { Tabs } from 'expo-router'
 import React from 'react'
+import { useAuth } from '@/components/auth/auth-provider'
+import { useInitializeData } from '@/hooks/useInitializeData'
 
 export default function TabLayout() {
+  const { user } = useAuth()
+  useInitializeData(user?.address)
+
   return (
     <ScrollProvider>
     <Tabs

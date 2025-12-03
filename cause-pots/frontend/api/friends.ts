@@ -1,8 +1,6 @@
 import { Friend, AddFriendRequest, UpdateFriendRequest } from './types'
-import { useAppStore } from '@/store/app-store'
-import { PublicKey } from '@solana/web3.js'
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.example.com'
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000'
 
 export async function addFriend(request: AddFriendRequest): Promise<Friend> {
   const response = await fetch(`${API_BASE_URL}/api/friends`, {
@@ -17,15 +15,7 @@ export async function addFriend(request: AddFriendRequest): Promise<Friend> {
     throw new Error('Failed to add friend')
   }
 
-  const friend = await response.json()
-
-  useAppStore.getState().addFriend(
-    new PublicKey(friend.address),
-    friend.address,
-    friend.displayName
-  )
-
-  return friend
+  return await response.json()
 }
 
 export async function removeFriend(friendId: string): Promise<void> {
@@ -36,8 +26,6 @@ export async function removeFriend(friendId: string): Promise<void> {
   if (!response.ok) {
     throw new Error('Failed to remove friend')
   }
-
-  useAppStore.getState().removeFriend(friendId)
 }
 
 export async function updateFriend(friendId: string, updates: UpdateFriendRequest): Promise<Friend> {
@@ -53,23 +41,7 @@ export async function updateFriend(friendId: string, updates: UpdateFriendReques
     throw new Error('Failed to update friend')
   }
 
-  const friend = await response.json()
-
-  const store = useAppStore.getState()
-  const existingFriend = store.friends.find((f) => f.id === friendId)
-  if (existingFriend) {
-    const updatedFriends = store.friends.map((f) =>
-      f.id === friendId
-        ? {
-            ...f,
-            displayName: friend.displayName,
-          }
-        : f
-    )
-    useAppStore.setState({ friends: updatedFriends })
-  }
-
-  return friend
+  return await response.json()
 }
 
 export async function getFriendById(friendId: string): Promise<Friend | null> {
@@ -89,41 +61,19 @@ export async function getFriendByAddress(address: string): Promise<Friend | null
     return null
   }
 
-  const friend = await response.json()
-
-  const store = useAppStore.getState()
-  const existingFriend = store.getFriendByAddress(address)
-  if (!existingFriend && friend) {
-    useAppStore.getState().addFriend(
-      new PublicKey(friend.address),
-      friend.address,
-      friend.displayName
-    )
-  }
-
-  return friend
+  return await response.json()
 }
 
-export async function getFriends(): Promise<Friend[]> {
-  const response = await fetch(`${API_BASE_URL}/api/friends`)
+export async function getFriends(userAddress?: string): Promise<Friend[]> {
+  const url = userAddress
+    ? `${API_BASE_URL}/api/friends?userAddress=${userAddress}`
+    : `${API_BASE_URL}/api/friends`
+
+  const response = await fetch(url)
 
   if (!response.ok) {
     return []
   }
 
-  const friends = await response.json()
-
-  friends.forEach((friend: Friend) => {
-    const store = useAppStore.getState()
-    const existingFriend = store.getFriendByAddress(friend.address)
-    if (!existingFriend) {
-      useAppStore.getState().addFriend(
-        new PublicKey(friend.address),
-        friend.address,
-        friend.displayName
-      )
-    }
-  })
-
-  return friends
+  return await response.json()
 }

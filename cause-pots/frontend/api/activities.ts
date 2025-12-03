@@ -1,7 +1,6 @@
-import { useAppStore } from '@/store/app-store'
 import { Activity } from './types'
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.example.com'
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000'
 
 export async function getActivitiesForUser(userAddress: string): Promise<Activity[]> {
   const response = await fetch(`${API_BASE_URL}/api/activities?userAddress=${userAddress}`)
@@ -10,27 +9,7 @@ export async function getActivitiesForUser(userAddress: string): Promise<Activit
     return []
   }
 
-  const activities = await response.json()
-
-  activities.forEach((activity: Activity) => {
-    const store = useAppStore.getState()
-    const existingActivity = store.activities.find((a) => a.id === activity.id)
-    if (!existingActivity) {
-      useAppStore.getState().addActivity({
-        type: activity.type,
-        userId: activity.userId,
-        userName: activity.userName,
-        potId: activity.potId,
-        potName: activity.potName,
-        friendId: activity.friendId,
-        friendAddress: activity.friendAddress,
-        amount: activity.amount,
-        currency: activity.currency,
-      })
-    }
-  })
-
-  return activities
+  return await response.json()
 }
 
 export async function getAllActivities(): Promise<Activity[]> {
@@ -40,27 +19,7 @@ export async function getAllActivities(): Promise<Activity[]> {
     return []
   }
 
-  const activities = await response.json()
-
-  activities.forEach((activity: Activity) => {
-    const store = useAppStore.getState()
-    const existingActivity = store.activities.find((a) => a.id === activity.id)
-    if (!existingActivity) {
-      useAppStore.getState().addActivity({
-        type: activity.type,
-        userId: activity.userId,
-        userName: activity.userName,
-        potId: activity.potId,
-        potName: activity.potName,
-        friendId: activity.friendId,
-        friendAddress: activity.friendAddress,
-        amount: activity.amount,
-        currency: activity.currency,
-      })
-    }
-  })
-
-  return activities
+  return await response.json()
 }
 
 export async function getActivitiesForPot(potId: string): Promise<Activity[]> {
@@ -70,27 +29,7 @@ export async function getActivitiesForPot(potId: string): Promise<Activity[]> {
     return []
   }
 
-  const activities = await response.json()
-
-  activities.forEach((activity: Activity) => {
-    const store = useAppStore.getState()
-    const existingActivity = store.activities.find((a) => a.id === activity.id)
-    if (!existingActivity) {
-      useAppStore.getState().addActivity({
-        type: activity.type,
-        userId: activity.userId,
-        userName: activity.userName,
-        potId: activity.potId,
-        potName: activity.potName,
-        friendId: activity.friendId,
-        friendAddress: activity.friendAddress,
-        amount: activity.amount,
-        currency: activity.currency,
-      })
-    }
-  })
-
-  return activities
+  return await response.json()
 }
 
 export async function markActivityAsRead(activityId: string): Promise<void> {

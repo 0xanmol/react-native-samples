@@ -1,7 +1,6 @@
 import { Pot, CreatePotRequest, UpdatePotRequest, AddContributionRequest } from './types'
-import { useAppStore } from '@/store/app-store'
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.example.com'
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000'
 
 export async function createPot(request: CreatePotRequest): Promise<Pot> {
   const response = await fetch(`${API_BASE_URL}/api/pots`, {
@@ -16,20 +15,7 @@ export async function createPot(request: CreatePotRequest): Promise<Pot> {
     throw new Error('Failed to create pot')
   }
 
-  const pot = await response.json()
-
-  useAppStore.getState().createPot({
-    name: pot.name,
-    description: pot.description,
-    creatorAddress: pot.creatorAddress,
-    targetAmount: pot.targetAmount,
-    targetDate: new Date(pot.targetDate),
-    currency: pot.currency,
-    category: pot.category,
-    contributors: pot.contributors,
-  })
-
-  return pot
+  return await response.json()
 }
 
 export async function getPotById(potId: string): Promise<Pot | null> {
@@ -39,40 +25,7 @@ export async function getPotById(potId: string): Promise<Pot | null> {
     return null
   }
 
-  const pot = await response.json()
-
-  const existingPot = useAppStore.getState().getPotById(potId)
-  if (!existingPot) {
-    useAppStore.getState().createPot({
-      name: pot.name,
-      description: pot.description,
-      creatorAddress: pot.creatorAddress,
-      targetAmount: pot.targetAmount,
-      targetDate: new Date(pot.targetDate),
-      currency: pot.currency,
-      category: pot.category,
-      contributors: pot.contributors,
-    })
-  } else {
-    useAppStore.getState().updatePot(potId, {
-      name: pot.name,
-      description: pot.description,
-      targetAmount: pot.targetAmount,
-      targetDate: new Date(pot.targetDate),
-      currency: pot.currency,
-      category: pot.category,
-      contributors: pot.contributors,
-      contributions: pot.contributions.map((c: any) => ({
-        ...c,
-        timestamp: new Date(c.timestamp),
-      })),
-      isReleased: pot.isReleased,
-      releasedAt: pot.releasedAt ? new Date(pot.releasedAt) : undefined,
-      releasedBy: pot.releasedBy,
-    })
-  }
-
-  return pot
+  return await response.json()
 }
 
 export async function getAllPots(): Promise<Pot[]> {
@@ -82,25 +35,7 @@ export async function getAllPots(): Promise<Pot[]> {
     return []
   }
 
-  const pots = await response.json()
-
-  pots.forEach((pot: Pot) => {
-    const existingPot = useAppStore.getState().getPotById(pot.id)
-    if (!existingPot) {
-      useAppStore.getState().createPot({
-        name: pot.name,
-        description: pot.description,
-        creatorAddress: pot.creatorAddress,
-        targetAmount: pot.targetAmount,
-        targetDate: new Date(pot.targetDate),
-        currency: pot.currency,
-        category: pot.category,
-        contributors: pot.contributors,
-      })
-    }
-  })
-
-  return pots
+  return await response.json()
 }
 
 export async function getUserPots(userAddress: string): Promise<Pot[]> {
@@ -110,25 +45,7 @@ export async function getUserPots(userAddress: string): Promise<Pot[]> {
     return []
   }
 
-  const pots = await response.json()
-
-  pots.forEach((pot: Pot) => {
-    const existingPot = useAppStore.getState().getPotById(pot.id)
-    if (!existingPot) {
-      useAppStore.getState().createPot({
-        name: pot.name,
-        description: pot.description,
-        creatorAddress: pot.creatorAddress,
-        targetAmount: pot.targetAmount,
-        targetDate: new Date(pot.targetDate),
-        currency: pot.currency,
-        category: pot.category,
-        contributors: pot.contributors,
-      })
-    }
-  })
-
-  return pots
+  return await response.json()
 }
 
 export async function updatePot(potId: string, updates: UpdatePotRequest): Promise<Pot> {
@@ -144,18 +61,7 @@ export async function updatePot(potId: string, updates: UpdatePotRequest): Promi
     throw new Error('Failed to update pot')
   }
 
-  const pot = await response.json()
-
-  useAppStore.getState().updatePot(potId, {
-    name: pot.name,
-    description: pot.description,
-    targetAmount: pot.targetAmount,
-    targetDate: new Date(pot.targetDate),
-    currency: pot.currency,
-    category: pot.category,
-  })
-
-  return pot
+  return await response.json()
 }
 
 export async function deletePot(potId: string): Promise<void> {
@@ -166,10 +72,6 @@ export async function deletePot(potId: string): Promise<void> {
   if (!response.ok) {
     throw new Error('Failed to delete pot')
   }
-
-  const store = useAppStore.getState()
-  const updatedPots = store.pots.filter((p) => p.id !== potId)
-  useAppStore.setState({ pots: updatedPots })
 }
 
 export async function addContributorToPot(potId: string, contributorAddress: string): Promise<void> {
@@ -184,8 +86,6 @@ export async function addContributorToPot(potId: string, contributorAddress: str
   if (!response.ok) {
     throw new Error('Failed to add contributor')
   }
-
-  useAppStore.getState().addContributorToPot(potId, contributorAddress)
 }
 
 export async function removeContributorFromPot(potId: string, contributorAddress: string): Promise<void> {
@@ -195,15 +95,6 @@ export async function removeContributorFromPot(potId: string, contributorAddress
 
   if (!response.ok) {
     throw new Error('Failed to remove contributor')
-  }
-
-  const store = useAppStore.getState()
-  const pot = store.getPotById(potId)
-  if (pot) {
-    const updatedContributors = pot.contributors.filter((addr) => addr !== contributorAddress)
-    useAppStore.getState().updatePot(potId, {
-      contributors: updatedContributors,
-    })
   }
 }
 
@@ -223,15 +114,6 @@ export async function addContribution(request: AddContributionRequest): Promise<
   if (!response.ok) {
     throw new Error('Failed to add contribution')
   }
-
-  const contribution = await response.json()
-
-  useAppStore.getState().addContribution({
-    potId: request.potId,
-    contributorAddress: request.contributorAddress,
-    amount: contribution.amount,
-    currency: contribution.currency,
-  })
 }
 
 export async function removeContribution(potId: string, contributionId: string): Promise<void> {
@@ -241,15 +123,6 @@ export async function removeContribution(potId: string, contributionId: string):
 
   if (!response.ok) {
     throw new Error('Failed to remove contribution')
-  }
-
-  const store = useAppStore.getState()
-  const pot = store.getPotById(potId)
-  if (pot) {
-    const updatedContributions = pot.contributions.filter((c) => c.id !== contributionId)
-    useAppStore.getState().updatePot(potId, {
-      contributions: updatedContributions,
-    })
   }
 }
 
@@ -265,6 +138,4 @@ export async function releasePot(potId: string, releasedBy: string): Promise<voi
   if (!response.ok) {
     throw new Error('Failed to release pot')
   }
-
-  useAppStore.getState().releasePot(potId, releasedBy)
 }

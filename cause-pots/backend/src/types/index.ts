@@ -53,11 +53,9 @@ export type Activity = {
   timestamp: string
   userId: string
   userName?: string
-  userAddress?: string
   potId?: string
   potName?: string
   friendId?: string
-  friendName?: string
   friendAddress?: string
   amount?: number
   currency?: 'SOL' | 'USDC'
@@ -84,30 +82,16 @@ export type UpdatePotRequest = {
 }
 
 export type AddContributionRequest = {
-  potId: string
   contributorAddress: string
   amount: number
   currency: 'SOL' | 'USDC'
 }
 
 export type AddFriendRequest = {
-  currentUserAddress: string
   address: string
   displayName?: string
 }
 
 export type UpdateFriendRequest = {
   displayName?: string
-}
-
-export type AuthUserRequest = {
-  pubkey: string
-  address: string
-  name?: string
-}
-
-export type UpdateUserRequest = {
-  name?: string
-  avatarUri?: string
-  isProfileComplete?: boolean
 }

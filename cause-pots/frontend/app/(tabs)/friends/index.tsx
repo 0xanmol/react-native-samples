@@ -4,12 +4,14 @@ import { FloatingActionButton } from '@/components/floating-action-button'
 import { AddFriendModal } from '@/components/friends/AddFriendModal'
 import { EmptyState } from '@/components/friends/EmptyState'
 import { FriendRow } from '@/components/friends/FriendRow'
+import { useAuth } from '@/components/auth/auth-provider'
 import { useWalletUi } from '@/components/solana/use-wallet-ui'
 import { useScrollContext } from '@/components/tab-bar/scroll-context'
 import { useToast } from '@/components/toast/toast-provider'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useAppStore } from '@/store/app-store'
 import { ellipsify } from '@/utils/ellipsify'
+import { addFriend as addFriendAPI } from '@/api/friends'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { PublicKey } from '@solana/web3.js'
 import { useRouter } from 'expo-router'
@@ -38,6 +40,7 @@ export default function FriendsScreen() {
   const router = useRouter()
   const { palette, cardStyle, isDark } = useAppTheme()
   const { account } = useWalletUi()
+  const { user } = useAuth()
   const { scrollY, handleScroll } = useScrollContext()
 
   const { friends, addFriend, removeFriend, pots, addContributorToPot } = useAppStore()
@@ -59,7 +62,16 @@ export default function FriendsScreen() {
     return AVATAR_PALETTE[seed.charCodeAt(0) % AVATAR_PALETTE.length]
   }, [])
 
-  const handleAddFriend = useCallback(() => {
+  const handleAddFriend = useCallback(async () => {
+    if (!user) {
+      showToast({
+        title: 'Not authenticated',
+        message: 'Please connect your wallet first',
+        type: 'error',
+      })
+      return
+    }
+
     try {
       const keyStr = addressInput.trim()
       const publicKey = new PublicKey(keyStr)
@@ -75,7 +87,15 @@ export default function FriendsScreen() {
         return
       }
 
+      // Call backend API to add friend
+      await addFriendAPI({
+        currentUserAddress: user.address,
+        address,
+      })
+
+      // Also update local store for immediate UI feedback
       addFriend(publicKey, address)
+
       setAddressInput('')
       setShowAddFriend(false)
       showToast({
@@ -83,14 +103,14 @@ export default function FriendsScreen() {
         message: ellipsify(address, 12),
         type: 'success',
       })
-    } catch {
+    } catch (error) {
       showToast({
-        title: 'Invalid address',
-        message: 'Please paste a valid Solana public key',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to add friend',
         type: 'error',
       })
     }
-  }, [addressInput, friends, addFriend, showToast])
+  }, [addressInput, friends, addFriend, showToast, user])
 
   const handleRemoveFriend = useCallback(
     (id: string, name?: string) => {

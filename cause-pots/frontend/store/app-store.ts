@@ -73,7 +73,8 @@ interface AppStore {
   getActivitiesForUser: (userAddress: string) => Activity[]
 }
 
-const createMockData = () => {
+// Mock data removed - now using backend API
+/* const createMockData = () => {
   const mockAddresses = [
     '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
     '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
@@ -754,14 +755,12 @@ const createMockData = () => {
   ]
 
   return { mockFriends, mockPots, mockActivities }
-}
+} */
 
 export const useAppStore = create<AppStore>((set, get) => {
-  const { mockFriends, mockPots, mockActivities } = createMockData()
-
   return {
     // Friends
-    friends: mockFriends,
+    friends: [],
   addFriend: (publicKey, address, displayName) => {
     const friend: Friend = {
       id: `friend-${Date.now()}-${Math.random()}`,
@@ -790,7 +789,7 @@ export const useAppStore = create<AppStore>((set, get) => {
   },
 
   // Pots
-  pots: mockPots,
+  pots: [],
   createPot: (potData) => {
     const pot: Pot = {
       ...potData,
@@ -894,7 +893,7 @@ export const useAppStore = create<AppStore>((set, get) => {
   },
 
   // Activity
-  activities: mockActivities,
+  activities: [],
   addActivity: (activityData) => {
     const activity: Activity = {
       ...activityData,

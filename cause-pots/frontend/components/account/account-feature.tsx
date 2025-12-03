@@ -19,9 +19,11 @@ import { LinearGradient } from 'expo-linear-gradient'
 import Clipboard from '@react-native-clipboard/clipboard'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useCluster } from '@/components/cluster/cluster-provider'
+import { useAuth } from '@/components/auth/auth-provider'
 
 export function AccountFeature() {
   const { account } = useWalletUi()
+  const { signOut, user } = useAuth()
   const router = useRouter()
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
@@ -31,6 +33,7 @@ export function AccountFeature() {
   const [refreshing, setRefreshing] = useState(false)
   const [lastSynced, setLastSynced] = useState<Date | null>(null)
   const [copied, setCopied] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const invalidateBalance = useGetBalanceInvalidate({ address: account?.publicKey as PublicKey })
   const invalidateTokenAccounts = useGetTokenAccountsInvalidate({ address: account?.publicKey as PublicKey })
   const tokenAccountsQuery = useGetTokenAccounts({ address: account?.publicKey })
@@ -92,6 +95,17 @@ export function AccountFeature() {
     }
     copyTimeoutRef.current = setTimeout(() => setCopied(false), 1600)
   }, [account])
+
+  const handleLogout = useCallback(async () => {
+    setLoggingOut(true)
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setLoggingOut(false)
+    }
+  }, [signOut])
 
 
   return (
@@ -172,6 +186,35 @@ export function AccountFeature() {
               </View>
             </LinearGradient>
           </View>
+
+          {/* User Info & Logout Section */}
+          {user && (
+            <GlassCard style={[styles.sectionCard, { backgroundColor: isDark ? colors.surfaceMuted : '#FFFFFF' }]}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.userInfoSection}>
+                  <AppText style={[styles.sectionTitle, { color: colors.text }]}>Profile</AppText>
+                  {user.name && (
+                    <AppText style={[styles.userName, { color: colors.textSecondary }]}>{user.name}</AppText>
+                  )}
+                  <AppText style={[styles.userAddress, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {ellipsify(user.address, 16)}
+                  </AppText>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.logoutButton, { backgroundColor: isDark ? '#FF4444' : '#FF3B30' }]}
+                onPress={handleLogout}
+                disabled={loggingOut}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="logout" size={20} color="#FFFFFF" />
+                <AppText style={styles.logoutText}>
+                  {loggingOut ? 'Logging out...' : 'Logout & Clear Cache'}
+                </AppText>
+              </TouchableOpacity>
+            </GlassCard>
+          )}
         </Animated.ScrollView>
       ) : (
         <View style={styles.emptyContainer}>
@@ -373,5 +416,32 @@ const styles = StyleSheet.create({
   },
   connectButton: {
     width: '100%',
+  },
+  userInfoSection: {
+    gap: 4,
+  },
+  userName: {
+    fontSize: 14,
+    fontFamily: 'IBMPlexSans-SemiBold',
+    marginTop: 4,
+  },
+  userAddress: {
+    fontSize: 12,
+    fontFamily: 'IBMPlexSans-Regular',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  logoutText: {
+    fontSize: 14,
+    fontFamily: 'IBMPlexSans-SemiBold',
+    color: '#FFFFFF',
   },
 })
