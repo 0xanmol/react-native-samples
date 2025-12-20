@@ -8,7 +8,12 @@ interface PotActionsProps {
   isTargetReached: boolean
   progress: number
   colors: any
+  canSign: boolean
+  hasEnoughSignatures: boolean
+  currentSignatures: number
+  requiredSignatures: number
   onContribute: () => void
+  onSignRelease: () => void
   onRelease: () => void
   onAddContributor: () => void
 }
@@ -20,7 +25,12 @@ export function PotActions({
   isTargetReached,
   progress,
   colors,
+  canSign,
+  hasEnoughSignatures,
+  currentSignatures,
+  requiredSignatures,
   onContribute,
+  onSignRelease,
   onRelease,
   onAddContributor,
 }: PotActionsProps) {
@@ -36,21 +46,37 @@ export function PotActions({
           >
             <Text style={styles.actionButtonText}>Contribute</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              {
-                backgroundColor: isReleaseable ? colors.accentPurple : colors.border,
-                opacity: isReleaseable ? 1 : 0.5,
-              },
-            ]}
-            onPress={onRelease}
-            disabled={!isReleaseable}
-          >
-            <Text style={[styles.actionButtonText, { color: isReleaseable ? '#FFFFFF' : colors.textSecondary }]}>
-              {isTargetReached ? 'Release Funds' : `Release Funds (${progress.toFixed(0)}%)`}
-            </Text>
-          </TouchableOpacity>
+
+          {/* Sign for Release button - only show if threshold NOT yet met and user can sign */}
+          {!hasEnoughSignatures && canSign && (
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: '#F59E0B' }]}
+              onPress={onSignRelease}
+            >
+              <Text style={styles.actionButtonText}>
+                Sign for Release ({currentSignatures}/{requiredSignatures})
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Release Funds button - only show if threshold met */}
+          {hasEnoughSignatures && (
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor: isReleaseable ? colors.accentPurple : colors.border,
+                  opacity: isReleaseable ? 1 : 0.5,
+                },
+              ]}
+              onPress={onRelease}
+              disabled={!isReleaseable}
+            >
+              <Text style={[styles.actionButtonText, { color: isReleaseable ? '#FFFFFF' : colors.textSecondary }]}>
+                {isTargetReached ? 'Release Funds' : `Release Funds (${progress.toFixed(0)}%)`}
+              </Text>
+            </TouchableOpacity>
+          )}
         </>
       )}
       <TouchableOpacity

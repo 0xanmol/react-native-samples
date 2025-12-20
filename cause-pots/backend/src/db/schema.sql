@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS friends (
 -- Activities table
 CREATE TABLE IF NOT EXISTS activities (
     id TEXT PRIMARY KEY,
-    type TEXT NOT NULL CHECK (type IN ('pot_created', 'contribution', 'release', 'friend_added')),
+    type TEXT NOT NULL CHECK (type IN ('pot_created', 'contribution', 'release', 'sign_release', 'friend_added')),
     timestamp TEXT DEFAULT (datetime('now')),
     user_id TEXT NOT NULL,
     pot_id TEXT,

@@ -21,6 +21,7 @@ import { ellipsify } from '@/utils/ellipsify'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useCallback, useState } from 'react'
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native'
+import { PublicKey } from '@solana/web3.js'
 
 export default function PotDetailsScreen() {
   const router = useRouter()
@@ -28,14 +29,15 @@ export default function PotDetailsScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = Colors[isDark ? 'dark' : 'light']
-  const { account } = useMobileWalletAdapter()
+  const { account, connection } = useMobileWalletAdapter()
   const { getPotById, addContribution, releasePot, updatePot, addContributorToPot, friends, fetchActivities } = useAppStore()
   const { showToast } = useToast()
   const {
     contribute: contributeOnChain,
     signRelease: signReleaseOnChain,
     releaseFunds: releaseFundsOnChain,
-    isLoading: isBlockchainLoading
+    isLoading: isBlockchainLoading,
+    programService
   } = usePotProgram()
   const { usdToSol, solPrice } = useCurrencyConversion()
   const pot = id ? getPotById(id) : null
@@ -76,8 +78,24 @@ export default function PotDetailsScreen() {
   const totalContributed = pot.contributions.reduce((sum, c) => sum + c.amount, 0)
   const progress = Math.min((totalContributed / pot.targetAmount) * 100, 100)
   const isTargetReached = progress >= 100
-  const isReleaseable = isTargetReached && !pot.isReleased
   const isContributor = pot.contributors.includes(userAddress) || pot.creatorAddress === userAddress
+
+  // Check if unlock time has passed
+  const now = Date.now()
+  const unlockTime = pot.unlockTimestamp ? pot.unlockTimestamp * 1000 : new Date(pot.targetDate).getTime()
+  const hasUnlockTimePassed = now >= unlockTime
+
+  // Multi-sig logic
+  const currentSignatures = pot.signatures?.length || 0
+  const requiredSignatures = pot.signersRequired || 1
+  const hasAlreadySigned = pot.signatures?.includes(userAddress) || false
+  const hasEnoughSignatures = currentSignatures >= requiredSignatures
+
+  // Can sign if: is contributor, unlock time passed, hasn't signed yet, not released
+  const canSign = isContributor && hasUnlockTimePassed && !hasAlreadySigned && !pot.isReleased
+
+  // Can release if: unlock time passed, enough signatures, target reached, not released
+  const isReleaseable = hasUnlockTimePassed && hasEnoughSignatures && isTargetReached && !pot.isReleased
 
   const handleContribute = async () => {
     const amount = parseFloat(contributionAmount)
@@ -139,6 +157,11 @@ export default function PotDetailsScreen() {
   }
 
   const handleSignRelease = async () => {
+    if (!account || !connection) {
+      Alert.alert('Error', 'Wallet not connected')
+      return
+    }
+
     try {
       const potPubkey = pot.potPubkey || pot.id
 
@@ -147,14 +170,52 @@ export default function PotDetailsScreen() {
         return
       }
 
-      // Sign release on blockchain
-      await signReleaseOnChain(potPubkey)
+      // Build the transaction first
+      const tx = await programService.buildSignReleaseTx({
+        potPubkey: new PublicKey(potPubkey),
+        signer: account.publicKey,
+      })
+
+      // Get latest blockhash
+      const { blockhash } = await connection.getLatestBlockhash()
+      tx.recentBlockhash = blockhash
+      tx.feePayer = account.publicKey
+
+      // Simulate transaction to see errors
+      console.log('🔍 Simulating sign release transaction...')
+      const simulation = await connection.simulateTransaction(tx)
+
+      if (simulation.value.err) {
+        console.error('❌ Simulation failed:', JSON.stringify(simulation.value, null, 2))
+        Alert.alert(
+          'Simulation Failed',
+          `Error: ${JSON.stringify(simulation.value.err)}\n\nLogs:\n${simulation.value.logs?.join('\n') || 'No logs'}`
+        )
+        return
+      }
+
+      console.log('✅ Simulation successful!')
+      console.log('Logs:', simulation.value.logs?.join('\n'))
+
+      // If simulation passed, proceed with actual transaction
+      const signature = await signReleaseOnChain(potPubkey)
+
+      // Update backend with signature
+      await import('@/api/pots').then(api =>
+        api.signPotRelease(pot.id, userAddress)
+      )
+
+      // Refetch activities to include the new sign_release activity
+      await fetchActivities(userAddress)
 
       showToast({
         title: 'Release signed',
-        message: `Your signature has been recorded`,
+        message: `Your signature has been recorded (${currentSignatures + 1}/${requiredSignatures})`,
         type: 'success',
       })
+
+      // Reload pot to get updated signatures
+      router.replace(`/pots/${pot.id}`)
     } catch (error) {
       console.error('Error signing release:', error)
       showToast({
@@ -166,35 +227,8 @@ export default function PotDetailsScreen() {
   }
 
   const handleRelease = () => {
-    // Validation before attempting release
-    const now = Date.now()
-    const unlockTime = pot.unlockTimestamp ? pot.unlockTimestamp * 1000 : new Date(pot.targetDate).getTime()
-    const hasUnlockTimePassed = now >= unlockTime
-
-    if (!hasUnlockTimePassed) {
-      const unlockDate = new Date(unlockTime).toLocaleDateString()
-      Alert.alert(
-        'Cannot Release Yet',
-        `This pot cannot be released until ${unlockDate}. Please wait until the unlock date has passed.`,
-        [{ text: 'OK' }]
-      )
-      return
-    }
-
     if (pot.isReleased) {
       Alert.alert('Already Released', 'This pot has already been released.', [{ text: 'OK' }])
-      return
-    }
-
-    // Check if enough signatures (if multi-sig)
-    const currentSignatures = pot.signatures?.length || 0
-    const requiredSignatures = pot.signersRequired || 1
-    if (currentSignatures < requiredSignatures) {
-      Alert.alert(
-        'Not Enough Signatures',
-        `This pot requires ${requiredSignatures} signature(s) but only has ${currentSignatures}. Please get more contributors to sign.`,
-        [{ text: 'OK' }]
-      )
       return
     }
 
@@ -354,10 +388,15 @@ export default function PotDetailsScreen() {
           isTargetReached={isTargetReached}
           progress={progress}
           colors={colors}
+          canSign={canSign}
+          hasEnoughSignatures={hasEnoughSignatures}
+          currentSignatures={currentSignatures}
+          requiredSignatures={requiredSignatures}
           onContribute={() => {
             setContributionCurrency(pot.currency)
             setShowContributeModal(true)
           }}
+          onSignRelease={handleSignRelease}
           onRelease={handleRelease}
           onAddContributor={() => setShowAddContributorModal(true)}
         />

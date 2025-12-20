@@ -480,6 +480,23 @@ router.post('/:id/sign', async (req: Request, res: Response) => {
       return
     }
 
+    // Get signer user
+    let signer = await db.get<any>(
+      'SELECT * FROM users WHERE address = ? OR pubkey = ?',
+      [signerAddress, signerAddress]
+    )
+
+    if (!signer) {
+      // Auto-create user if doesn't exist
+      const userId = uuidv4()
+      const now = new Date().toISOString()
+      await db.run(
+        'INSERT INTO users (id, pubkey, address, is_profile_complete, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [userId, signerAddress, signerAddress, 0, now, now]
+      )
+      signer = await db.get<any>('SELECT * FROM users WHERE id = ?', [userId])
+    }
+
     // Parse existing signatures
     let signatures: string[] = []
     try {
@@ -497,9 +514,18 @@ router.post('/:id/sign', async (req: Request, res: Response) => {
     // Add signature
     signatures.push(signerAddress)
 
+    const now = new Date().toISOString()
+
     await db.run(
       'UPDATE pots SET signatures = ? WHERE id = ?',
       [JSON.stringify(signatures), id]
+    )
+
+    // Create activity for sign_release
+    await db.run(
+      `INSERT INTO activities (id, type, timestamp, user_id, pot_id)
+       VALUES (?, ?, ?, ?, ?)`,
+      [uuidv4(), 'sign_release', now, signer.id, id]
     )
 
     res.json({ success: true, signatures })

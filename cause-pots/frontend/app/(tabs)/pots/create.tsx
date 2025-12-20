@@ -24,6 +24,12 @@ const getDefaultTargetDateString = () =>
 const dayMs = 24 * 60 * 60 * 1000
 const formatDate = (d: Date) => d.toISOString().slice(0, 10)
 
+const today = () => {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 const tomorrow = () => {
   const d = new Date()
   d.setDate(d.getDate() + 1)
@@ -103,7 +109,7 @@ export default function CreatePotScreen() {
   const { fetchActivities } = useAppStore()
 
   const ensureFuture = (date: Date) => {
-    const min = tomorrow()
+    const min = today()
     return date.getTime() < min.getTime() ? min : date
   }
 
@@ -123,7 +129,7 @@ export default function CreatePotScreen() {
     !isNaN(numAmount) &&
     numAmount > 0 &&
     !isNaN(dateObj.getTime()) &&
-    dateObj > new Date() &&
+    dateObj >= today() &&
     contributors.size > 0 &&
     category !== undefined &&
     signersRequired > 0 &&
@@ -164,7 +170,18 @@ export default function CreatePotScreen() {
       // Calculate unlock days from target date
       const now = new Date()
       const target = new Date(targetDate)
-      const unlockDays = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+
+      // Check if target date is today (same calendar day)
+      const isSameDay = now.toDateString() === target.toDateString()
+
+      let unlockDays: number
+      if (isSameDay) {
+        // Same day = immediate unlock (0 days)
+        unlockDays = 0
+      } else {
+        // Calculate days difference
+        unlockDays = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      }
 
       // Create pot on blockchain - always use SOL amount
       // If USDC is selected, solEquivalent contains the converted SOL amount
@@ -174,8 +191,9 @@ export default function CreatePotScreen() {
         name: name.trim(),
         description: description.trim() || '',
         targetAmount: targetAmountInSol,
-        unlockDays: Math.max(unlockDays, 1), // Minimum 1 day
+        unlockDays, // Send 0 for same day, otherwise calculated days
         signersRequired, // Use user-specified value
+        contributors: allContributors, // Add all contributors on-chain in same tx
       })
 
       // Close any open modals first

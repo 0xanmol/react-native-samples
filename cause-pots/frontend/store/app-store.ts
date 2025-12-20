@@ -44,7 +44,7 @@ export type Pot = {
   recipientAddress?: string
 }
 
-export type ActivityType = 'pot_created' | 'contribution' | 'release' | 'friend_added'
+export type ActivityType = 'pot_created' | 'contribution' | 'release' | 'sign_release' | 'friend_added'
 
 export type Activity = {
   id: string

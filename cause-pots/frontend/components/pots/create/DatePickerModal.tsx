@@ -4,12 +4,19 @@ import { AppText } from '@/components/app-text'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 
 const quickDates = [
+  { days: 0, label: 'Today', subtitle: 'Same day' },
   { days: 7, label: 'In 7 days', subtitle: 'Next week' },
   { days: 30, label: 'In 30 days', subtitle: 'One month' },
   { days: 90, label: 'In 90 days', subtitle: 'Three months' },
 ]
 
 const dayMs = 24 * 60 * 60 * 1000
+const today = () => {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 const tomorrow = () => {
   const d = new Date()
   d.setDate(d.getDate() + 1)
@@ -50,7 +57,7 @@ export function DatePickerModal({
   onApplyDate,
 }: DatePickerModalProps) {
   const ensureFuture = (date: Date) => {
-    const min = tomorrow()
+    const min = today()
     return date.getTime() < min.getTime() ? min : date
   }
 
@@ -58,7 +65,7 @@ export function DatePickerModal({
     DateTimePickerAndroid.open({
       value: ensureFuture(customDate),
       mode: 'date',
-      minimumDate: tomorrow(),
+      minimumDate: today(),
       onChange: (_event, selectedDate) => {
         if (selectedDate) onApplyDate(selectedDate)
       },
@@ -124,7 +131,7 @@ export function DatePickerModal({
                 mode="date"
                 display="spinner"
                 value={ensureFuture(customDate)}
-                minimumDate={tomorrow()}
+                minimumDate={today()}
                 onChange={(_e, d) => d && onCustomDateChange(d)}
                 themeVariant={isDark ? 'dark' : 'light'}
               />

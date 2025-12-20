@@ -77,6 +77,7 @@ export class PotProgramService {
     targetAmount: number
     unlockDays: number
     signersRequired: number
+    contributors?: string[] // Additional contributors to add (excluding authority)
   }): Promise<Transaction> {
     const [potPDA] = this.getPotPDA(params.authority, params.name)
     const [vaultPDA] = this.getVaultPDA(potPDA)
@@ -84,7 +85,7 @@ export class PotProgramService {
     // Convert target amount to lamports (assuming SOL)
     const targetAmountLamports = new BN(params.targetAmount * web3.LAMPORTS_PER_SOL)
 
-    const instruction = await this.program.methods
+    const createPotInstruction = await this.program.methods
       .createPot(
         params.name,
         params.description,
@@ -101,7 +102,30 @@ export class PotProgramService {
       .instruction()
 
     const tx = new Transaction()
-    tx.add(instruction)
+    tx.add(createPotInstruction)
+
+    // Add contributor instructions for each selected contributor (excluding authority)
+    if (params.contributors && params.contributors.length > 0) {
+      for (const contributorAddress of params.contributors) {
+        const contributorPubkey = new PublicKey(contributorAddress)
+
+        // Skip if contributor is the authority (already added in create_pot)
+        if (contributorPubkey.equals(params.authority)) {
+          continue
+        }
+
+        const addContributorInstruction = await this.program.methods
+          .addContributor(contributorPubkey)
+          .accounts({
+            pot: potPDA,
+            authority: params.authority,
+          })
+          .instruction()
+
+        tx.add(addContributorInstruction)
+      }
+    }
+
     tx.feePayer = params.authority
 
     // Don't set blockhash here - let the transaction hook handle it

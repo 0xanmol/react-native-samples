@@ -127,6 +127,20 @@ export async function removeContribution(potId: string, contributionId: string):
   }
 }
 
+export async function signPotRelease(potId: string, signerAddress: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/pots/${potId}/sign`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ signerAddress }),
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to sign pot release')
+  }
+}
+
 export async function releasePot(potId: string, releasedBy: string, transactionSignature?: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/api/pots/${potId}/release`, {
     method: 'POST',

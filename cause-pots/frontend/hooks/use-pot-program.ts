@@ -29,6 +29,7 @@ export function usePotProgram() {
     targetAmount: number
     unlockDays: number
     signersRequired: number
+    contributors?: string[] // Additional contributors to add on-chain
   }) => {
     const authority = getAccountPublicKey()
 
