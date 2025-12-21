@@ -23,7 +23,7 @@ export function AddContributorModal({
   const availableFriends = friends.filter((f) => !existingContributors.includes(f.address))
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
           <AppText type="title" style={styles.modalTitle}>

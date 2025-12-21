@@ -24,7 +24,7 @@ export function EditPotModal({
   onSubmit,
 }: EditPotModalProps) {
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
           <AppText type="title" style={styles.modalTitle}>
