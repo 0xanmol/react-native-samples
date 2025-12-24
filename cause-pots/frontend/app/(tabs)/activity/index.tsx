@@ -22,10 +22,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { Animated } from 'react-native';
 import { Fonts } from '@/constants/fonts';
+import { useToast } from '@/components/toast/toast-provider';
 
 export default function ActivityScreen() {
   const { palette, isDark } = useAppTheme();
   const { scrollY, handleScroll } = useScrollContext();
+  const { showToast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState('');
   const { account } = useMobileWalletAdapter();
@@ -36,9 +38,15 @@ export default function ActivityScreen() {
   useEffect(() => {
     if (account) {
       const userAddress = account.publicKey.toBase58();
-      fetchActivities(userAddress);
+      fetchActivities(userAddress).catch((error) => {
+        showToast({
+          title: 'Failed to load activities',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          type: 'error',
+        });
+      });
     }
-  }, [account, fetchActivities]);
+  }, [account, fetchActivities, showToast]);
 
   /* ---------- ICON HELPERS (COLORS & TYPES) ---------- */
   const getActivityIcon = useCallback((type: string) => {

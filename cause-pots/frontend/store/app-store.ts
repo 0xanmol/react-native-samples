@@ -949,8 +949,7 @@ export const useAppStore = create<AppStore>((set, get) => {
       )
 
       if (!potData) {
-        console.error('Pot not found in backend')
-        return
+        throw new Error('Pot not found in backend')
       }
 
       // Convert API response (string dates) to local format (Date objects)
@@ -971,6 +970,7 @@ export const useAppStore = create<AppStore>((set, get) => {
       }))
     } catch (error) {
       console.error('Failed to refresh pot from backend:', error)
+      throw error
     }
   },
 
@@ -991,6 +991,7 @@ export const useAppStore = create<AppStore>((set, get) => {
       set({ activities: activitiesWithDates })
     } catch (error) {
       console.error('Failed to fetch activities:', error)
+      throw error
     }
   },
   setActivities: (activities) => {
