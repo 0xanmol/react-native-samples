@@ -92,6 +92,18 @@ export function useWalletAuth() {
     }
   }, [])
 
+  /**
+   * Update user state (for profile updates)
+   */
+  const updateUserState = useCallback(async (updatedUser: User) => {
+    try {
+      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser))
+      setUser(updatedUser)
+    } catch (err) {
+      console.error('Failed to update user state:', err)
+    }
+  }, [])
+
   return {
     user,
     isLoading,
@@ -99,5 +111,6 @@ export function useWalletAuth() {
     authenticate,
     restoreUser,
     logout,
+    updateUserState,
   }
 }
