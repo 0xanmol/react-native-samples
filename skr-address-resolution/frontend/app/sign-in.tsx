@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router, Redirect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useMobileWalletAdapter } from '@wallet-ui/react-native-web3js';
+import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import { AppText } from '@/components/app-text';
 import { AppConfig } from '@/constants/app-config';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,7 +11,7 @@ import { AnimatedSplash } from '@/components/animated-splash';
 import Toast from 'react-native-toast-message';
 
 export default function SignIn() {
-  const { account, connect } = useMobileWalletAdapter();
+  const { account, connect } = useMobileWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
 

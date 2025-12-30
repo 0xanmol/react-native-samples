@@ -109,7 +109,7 @@ frontend/
 
 Uses `@wallet-ui/react-native-web3js` for secure wallet connections via Mobile Wallet Adapter. The library handles auth state management, persistence, and wallet communication automatically.
 
-Components use the `useMobileWalletAdapter()` hook directly to access:
+Components use the `useMobileWallet()` hook directly to access:
 - `account` - Connected wallet account with publicKey
 - `connect()` - Function to initiate wallet connection
 - `disconnect()` - Function to disconnect wallet
