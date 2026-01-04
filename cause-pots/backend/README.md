@@ -1,86 +1,32 @@
 # Cause Pots Backend API
 
-Express.js backend server for the Cause Pots application with SQLite3 database.
+Express.js REST API server with SQLite3 database for the Cause Pots demo application.
 
-## Features
-
+**Features:**
 - RESTful API for managing pots, friends, and activities
+- Multi-signature release approval tracking
+- Transaction signature storage for blockchain audit trail
 - SQLite3 database for persistent storage
 - TypeScript for type safety
-- CORS enabled for cross-origin requests
-- Automatic database initialization
 
-## Prerequisites
-
-- Node.js 18+ installed
-- npm or yarn package manager
-
-## Setup Instructions
-
-### 1. Install Dependencies
+## Setup
 
 ```bash
-cd backend
 npm install
+npm run init-db  # Initialize database schema
+npm start        # Run server on port 3000
 ```
 
-### 2. Configure Environment Variables
-
-Copy the example environment file and configure as needed:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` to customize your configuration:
-
-```env
-PORT=3000
-NODE_ENV=development
-DB_PATH=./data/cause-pots.db
-CORS_ORIGIN=*
-```
-
-### 3. Initialize Database
-
-Initialize the database schema:
-
-```bash
-npm run init-db
-```
-
-This will create all necessary tables and indexes.
-
-### 4. (Optional) Seed Database with Dummy Data
-
-To populate the database with sample data for testing:
-
+**Optional:** Seed with dummy data for testing
 ```bash
 npm run seed
 ```
 
-This will create:
-- 5 friends (Alice, Bob, Charlie, Diana, Eve)
-- 8 pots with various categories (Goal, Emergency, Bills, Events, Others)
-- Multiple contributions for each pot
-- Activity history for all actions
-
-### 5. Start the Server
-
-For development with auto-reload:
-
-```bash
-npm run dev
+**Environment Variables** (create `.env` file):
+```env
+PORT=3000
+DB_PATH=./data/cause-pots.db
 ```
-
-For production:
-
-```bash
-npm run build
-npm start
-```
-
-The server will start on `http://localhost:3000` (or the port specified in `.env`)
 
 ## API Endpoints
 
@@ -101,6 +47,7 @@ The server will start on `http://localhost:3000` (or the port specified in `.env
 - `DELETE /api/pots/:id/contributors/:address` - Remove contributor from pot
 - `POST /api/pots/:id/contributions` - Add contribution to pot
 - `DELETE /api/pots/:id/contributions/:contributionId` - Remove contribution
+- `POST /api/pots/:id/sign` - Sign for pot release (multi-signature approval)
 - `POST /api/pots/:id/release` - Release pot funds
 
 ### Friends
@@ -118,6 +65,8 @@ The server will start on `http://localhost:3000` (or the port specified in `.env
 - `GET /api/activities?userAddress=...` - Get activities for a user
 - `GET /api/activities?potId=...` - Get activities for a pot
 - `POST /api/activities/:id/read` - Mark activity as read
+
+**Note**: Activities include `transaction_signature` field containing Solana blockchain transaction signatures for audit trail and Solana Explorer integration.
 
 ## Project Structure
 
@@ -143,132 +92,25 @@ backend/
 └── README.md                # This file
 ```
 
-## Data Models
+## Database Schema
 
-### Pot
-```typescript
-{
-  id: string
-  name: string
-  description?: string
-  creatorAddress: string
-  targetAmount: number
-  targetDate: string
-  currency: 'SOL' | 'USDC'
-  category: 'Goal' | 'Emergency' | 'Bills' | 'Events' | 'Others'
-  contributors: string[]
-  contributions: Contribution[]
-  createdAt: string
-  isReleased: boolean
-  releasedAt?: string
-  releasedBy?: string
-}
-```
-
-### Friend
-```typescript
-{
-  id: string
-  publicKey: string
-  address: string
-  displayName?: string
-  addedAt: string
-}
-```
-
-### Activity
-```typescript
-{
-  id: string
-  type: 'pot_created' | 'contribution' | 'release' | 'friend_added'
-  timestamp: string
-  userId: string
-  userName?: string
-  potId?: string
-  potName?: string
-  friendId?: string
-  friendAddress?: string
-  amount?: number
-  currency?: 'SOL' | 'USDC'
-}
-```
-
-## Development
-
-### Building
-
-```bash
-npm run build
-```
-
-Compiled JavaScript will be output to the `dist/` directory.
-
-### Database
-
-The SQLite database file will be created at the path specified in `DB_PATH` (default: `./data/cause-pots.db`). The database schema includes:
-
-- `pots` - Stores pot information
-- `pot_contributors` - Junction table for pot contributors
-- `contributions` - Individual contributions to pots
+**Tables:**
+- `pots` - Pot information with multi-sig tracking
+- `pot_contributors` - Junction table for contributors
+- `contributions` - Individual contributions
 - `friends` - User friends list
-- `activities` - Activity feed
+- `activities` - Activity feed with transaction signatures
 
-### Scripts
+## Scripts
 
-- `npm run dev` - Start development server with auto-reload
-- `npm run build` - Compile TypeScript to JavaScript
-- `npm start` - Start production server
-- `npm run init-db` - Initialize/reset database schema
-- `npm run seed` - Populate database with dummy data
-
-## Testing the API
-
-You can test the API using curl, Postman, or any HTTP client:
-
-```bash
-# Health check
-curl http://localhost:3000/health
-
-# Create a pot
-curl -X POST http://localhost:3000/api/pots \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Vacation Fund",
-    "description": "Save for summer vacation",
-    "creatorAddress": "0x123...",
-    "targetAmount": 1000,
-    "targetDate": "2025-06-01T00:00:00Z",
-    "currency": "SOL",
-    "category": "Goal",
-    "contributors": []
-  }'
-
-# Get all pots
-curl http://localhost:3000/api/pots
-```
+- `npm run dev` - Development server with auto-reload
+- `npm run build` - Compile TypeScript
+- `npm start` - Production server
+- `npm run init-db` - Initialize/reset database
+- `npm run seed` - Add dummy data
 
 ## Notes
 
-- The database uses SQLite3, which stores data in a single file
-- All timestamps are stored in ISO 8601 format
-- The server automatically initializes the database on startup
-- CORS is enabled for all origins by default (configure in `.env` for production)
-
-## Troubleshooting
-
-### Database Errors
-
-If you encounter database errors, try reinitializing:
-
-```bash
-rm -rf data/
-npm run db:init
-```
-
-### Port Already in Use
-
-If port 3000 is already in use, change the `PORT` in `.env` to another value.
-
-## License
-
-MIT
+- SQLite3 database stored at `./data/cause-pots.db`
+- Transaction signatures link to Solana blockchain for audit trail
+- Multi-signature approvals tracked both on-chain and off-chain

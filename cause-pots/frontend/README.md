@@ -1,50 +1,123 @@
-# Welcome to your Expo app 👋
+# Frontend - Cause Pots
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Demo application** showcasing Anchor smart contract integration into React Native. This app demonstrates building custom transactions and instructions, working with Program Derived Addresses (PDAs), and integrating Solana programs using Mobile Wallet Adapter in a group savings context.
 
-## Get started
+**Tech Stack:** React Native, Expo (SDK 54), TypeScript, Anchor Framework (0.32), Solana Mobile Wallet Adapter
 
-1. Install dependencies
+📖 **[View Technical Deep Dive →](TECHNICAL-GUIDE.md)** - Comprehensive guide to Solana/Anchor integration
 
-   ```bash
-   npm install
-   ```
+## Quick Start
 
-2. Start the app
+### Prerequisites
 
-   ```bash
-   npx expo start
-   ```
+- Android device or emulator
+- Node.js 18+
+- [Mock MWA Wallet](https://github.com/solana-mobile/mobile-wallet-adapter/tree/main/examples/example-clientlib-ktx) installed
+- Backend API running (see [backend/README.md](../backend/README.md))
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### Installation
 
 ```bash
-npm run reset-project
+# Install dependencies
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Running the App
 
-## Learn more
+```bash
+# Generate native projects (required for native modules)
+npx expo prebuild --clean
 
-To learn more about developing your project with Expo, look at the following resources:
+# Run on Android
+npx expo run:android
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+**Important:** Requires a development build (not Expo Go) due to native Solana Mobile Wallet Adapter dependencies.
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## Configuration
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Environment Variables
+
+Create a `.env` file in the frontend directory:
+
+```bash
+# API Configuration
+EXPO_PUBLIC_API_URL=http://10.0.2.2:3000/api
+
+# Solana Configuration
+EXPO_PUBLIC_SOLANA_CLUSTER=devnet
+EXPO_PUBLIC_PROGRAM_ID=CTtGEyhWsub71K9bDKJZbaBDNbqNk54fUuh4pLB8M5sR
+```
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `EXPO_PUBLIC_API_URL` | Backend API endpoint | `http://10.0.2.2:3000/api` (Android emulator) |
+| `EXPO_PUBLIC_SOLANA_CLUSTER` | Solana network | `devnet` |
+| `EXPO_PUBLIC_PROGRAM_ID` | Deployed Anchor program ID | `CTtGEyhWsub71K9bDKJZbaBDNbqNk54fUuh4pLB8M5sR` |
+
+**Note:** `10.0.2.2` is the special IP for Android emulator to access host machine's localhost. For physical devices, use your computer's local IP address (e.g., `192.168.1.100`).
+
+## Anchor IDL Setup
+
+This app uses Anchor 0.32 which requires the IDL (Interface Definition Language) file at `idl/idl.json`.
+
+If you encounter IDL-related errors, regenerate from the contract:
+```bash
+cd ../contract
+anchor build
+cp target/idl/contract.json ../frontend/idl/idl.json
+```
+
+See [TECHNICAL-GUIDE.md](TECHNICAL-GUIDE.md#anchor-framework--idl-setup) for details.
+
+## Key Features
+
+- **Wallet Integration**: Mobile Wallet Adapter for secure wallet connections
+- **Time-Locked Pots**: Create savings pots with unlock timestamps
+- **Multi-Signature**: M-of-N approval voting for fund release
+- **Program Derived Addresses**: Deterministic account generation
+- **Friend Management**: Add friends via public key or .skr domains
+- **Transaction History**: Complete blockchain audit trail
+
+## Architecture Highlights
+
+**Program Service Pattern**: `PotProgram` service class abstracts Anchor contract interactions
+
+**Hybrid State Management**: On-chain state (vault balances, signatures) + off-chain metadata (names, descriptions)
+
+**Transaction Flow**: Build → Sign via MWA → Send to blockchain → Record in backend
+
+📖 **See [TECHNICAL-GUIDE.md](TECHNICAL-GUIDE.md)** for comprehensive implementation details, code walkthroughs, and best practices.
+
+## Common Issues
+
+### IDL parse error / Invalid program ID
+1. Verify program ID in `.env` matches deployed contract
+2. Regenerate IDL: `cd ../contract && anchor build && cp target/idl/contract.json ../frontend/idl/idl.json`
+3. Rebuild: `npx expo prebuild --clean && npx expo run:android`
+
+### Network request failed / API unreachable
+1. Verify backend is running: `cd ../backend && npm start`
+2. Check API URL in `.env` (use `10.0.2.2` for emulator, local IP for physical device)
+3. Ensure firewall allows port 3000
+
+### Wallet connection timeout
+1. Ensure Solana wallet app installed
+2. Rebuild native modules: `npx expo prebuild --clean`
+3. Clear app data and reinstall
+
+### Transaction simulation failed
+1. Request devnet SOL via Account screen
+2. Check Solana Explorer for error details
+3. Verify pot configuration
+
+📖 **See [TECHNICAL-GUIDE.md](TECHNICAL-GUIDE.md#common-anchor-errors)** for detailed error troubleshooting
+
+## Resources
+
+- [Solana Mobile Docs](https://docs.solanamobile.com/)
+- [Anchor Framework](https://www.anchor-lang.com/)
+- [Solana Explorer (Devnet)](https://explorer.solana.com/?cluster=devnet)
+- [TECHNICAL-GUIDE.md](TECHNICAL-GUIDE.md) - Complete implementation guide

@@ -59,6 +59,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       await connect()
     } catch (error) {
       console.error('Sign in error:', error)
+      throw error // Re-throw so parent can handle it
     } finally {
       setIsLoading(false)
     }

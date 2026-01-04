@@ -7,7 +7,7 @@ export type Cluster = {
 }
 
 export class AppConfig {
-  static name = 'pots'
+  static name = 'Cause Pots'
   static uri = 'https://example.com'
 
   // Blockchain configuration

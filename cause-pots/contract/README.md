@@ -10,10 +10,16 @@ Cause Pots enables groups to save SOL together with built-in protections:
 - **Contributor Tracking**: Detailed tracking of individual contributions
 - **Authority Management**: Pot creator can add new contributors
 
-## Program ID
+## Deployment
+
+**Network:** Solana Devnet
+
+**Program ID:**
 ```
-58pL9f7ghhBpJNeavRiCp7mdeCACZ232NPxaFEj9zGfN
+CTtGEyhWsub71K9bDKJZbaBDNbqNk54fUuh4pLB8M5sR
 ```
+
+**Explorer:** [View on Solana Explorer](https://explorer.solana.com/address/CTtGEyhWsub71K9bDKJZbaBDNbqNk54fUuh4pLB8M5sR?cluster=devnet)
 
 ## Account Structures
 
@@ -27,7 +33,7 @@ Main account storing pot state and funds.
 | `description` | `String` | Pot description (max 200 chars) |
 | `target_amount` | `u64` | Target savings goal in lamports |
 | `total_contributed` | `u64` | Total SOL contributed |
-| `unlock_timestamp` | `i64` | Unix timestamp when funds can be released |
+| `unlock_timestamp` | `i64` | Unix timestamp when funds can be released (calculated from unlock_days) |
 | `signers_required` | `u8` | Number of signatures needed for release |
 | `signatures` | `Vec<Pubkey>` | List of approving signers (max 10) |
 | `contributors` | `Vec<Pubkey>` | List of contributors (max 20) |
@@ -36,6 +42,7 @@ Main account storing pot state and funds.
 | `recipient` | `Option<Pubkey>` | Address that received funds |
 | `created_at` | `i64` | Creation timestamp |
 | `bump` | `u8` | PDA bump seed |
+| `vault_bump` | `u8` | Vault PDA bump seed |
 
 **PDA Seeds:** `["pot", authority, name]`
 
@@ -64,14 +71,14 @@ Create a new savings pot with time-lock and multi-sig configuration.
 - `name: String` - Pot name (max 32 characters)
 - `description: String` - Pot description (max 200 characters)
 - `target_amount: u64` - Target savings goal in lamports
-- `unlock_days: i64` - Number of days until unlock
+- `unlock_days: i64` - Number of days until unlock (converted to timestamp internally)
 - `signers_required: u8` - Number of signatures needed for release
 
 **Validations:**
 - Name length ≤ 32 characters
 - Description length ≤ 200 characters
 - Target amount > 0
-- Unlock days > 0
+- Unlock days > 0 (internally converted to Unix timestamp: `current_time + days * 86400`)
 - Signers required > 0
 
 **Example:**
@@ -241,137 +248,48 @@ anchor test
 18 passing (12s)
 ```
 
-## Development Setup
+## Development
 
 ### Prerequisites
-
-- Rust 1.89.0 (configured via rust-toolchain.toml)
+- Rust 1.89.0
 - Solana CLI 3.1.3
 - Anchor CLI 0.32.1
-- Anchor Lang 0.32.1
-- Node.js 16+ with Yarn
+- Node.js 16+
 
-### Installation
-
-```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Install Solana
-sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
-
-# Install Anchor
-cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
-avm install 0.32.1
-avm use 0.32.1
-
-# Install dependencies
-yarn install
-```
-
-### Build
-
+### Setup
 ```bash
 anchor build
-```
-
-### Deploy
-
-**Localnet:**
-```bash
 anchor test
 ```
 
-**Devnet:**
+### Deploy
 ```bash
+# Devnet
 solana config set --url devnet
 solana airdrop 2
 anchor deploy --provider.cluster devnet
 ```
 
-**Mainnet:**
-```bash
-solana config set --url mainnet-beta
-anchor deploy --provider.cluster mainnet
-```
-
-## Usage Example
+## Complete Usage Flow
 
 ```typescript
-import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
-import { Contract } from "./target/types/contract";
-
-const provider = anchor.AnchorProvider.env();
-anchor.setProvider(provider);
-const program = anchor.workspace.Contract as Program<Contract>;
-
-// 1. Create pot
-const potName = "Trip Fund";
-const [potPDA] = PublicKey.findProgramAddressSync(
-  [Buffer.from("pot"), authority.publicKey.toBuffer(), Buffer.from(potName)],
-  program.programId
-);
-
-await program.methods
-  .createPot(
-    potName,
-    "Saving for Tokyo trip",
-    new anchor.BN(50 * LAMPORTS_PER_SOL),
-    new anchor.BN(30),
-    2
-  )
-  .accounts({
-    pot: potPDA,
-    authority: authority.publicKey,
-    systemProgram: SystemProgram.programId,
-  })
-  .signers([authority])
-  .rpc();
+// 1. Create pot with time-lock and 2-of-3 multi-sig
+await program.methods.createPot(
+  "Trip Fund", "Tokyo trip", new BN(50 * LAMPORTS_PER_SOL), new BN(30), 2
+).rpc();
 
 // 2. Contributors contribute
-for (const contributor of [contributor1, contributor2, contributor3]) {
-  const [contributorPDA] = PublicKey.findProgramAddressSync(
-    [Buffer.from("contributor"), potPDA.toBuffer(), contributor.publicKey.toBuffer()],
-    program.programId
-  );
+await program.methods.contribute(new BN(2 * LAMPORTS_PER_SOL)).rpc();
 
-  await program.methods
-    .contribute(new anchor.BN(2 * LAMPORTS_PER_SOL))
-    .accounts({
-      pot: potPDA,
-      contributorAccount: contributorPDA,
-      contributor: contributor.publicKey,
-      systemProgram: SystemProgram.programId,
-    })
-    .signers([contributor])
-    .rpc();
-}
-
-// 3. After time-lock expires, contributors sign
-await program.methods
-  .signRelease()
-  .accounts({ pot: potPDA, signer: contributor1.publicKey })
-  .signers([contributor1])
-  .rpc();
-
-await program.methods
-  .signRelease()
-  .accounts({ pot: potPDA, signer: contributor2.publicKey })
-  .signers([contributor2])
-  .rpc();
+// 3. After time-lock, contributors sign (2 required)
+await program.methods.signRelease().rpc();
+await program.methods.signRelease().rpc();
 
 // 4. Authority releases funds
-await program.methods
-  .releaseFunds(recipient.publicKey)
-  .accounts({
-    pot: potPDA,
-    authority: authority.publicKey,
-    recipient: recipient.publicKey,
-  })
-  .signers([authority])
-  .rpc();
+await program.methods.releaseFunds(recipient.publicKey).rpc();
 ```
+
+See tests for complete examples.
 
 ## Security Considerations
 
@@ -390,6 +308,9 @@ await program.methods
 - Fixed multi-sig configuration after creation
 - Authority trust required for final release
 
-## License
+## Resources
 
-MIT
+- [Anchor Framework](https://www.anchor-lang.com/)
+- [Solana Explorer (Devnet)](https://explorer.solana.com/?cluster=devnet)
+- [Frontend README](../frontend/README.md) - React Native integration guide
+- [Frontend TECHNICAL-GUIDE](../frontend/TECHNICAL-GUIDE.md) - Deep dive into client-side integration

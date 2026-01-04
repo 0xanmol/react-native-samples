@@ -99,6 +99,57 @@ class Database {
     })
   }
 
+  async beginTransaction(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error('Database not connected'))
+        return
+      }
+
+      this.db.run('BEGIN TRANSACTION', (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
+    })
+  }
+
+  async commit(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error('Database not connected'))
+        return
+      }
+
+      this.db.run('COMMIT', (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
+    })
+  }
+
+  async rollback(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error('Database not connected'))
+        return
+      }
+
+      this.db.run('ROLLBACK', (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
+    })
+  }
+
   async close(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.db) {

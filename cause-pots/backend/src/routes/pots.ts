@@ -91,83 +91,94 @@ router.post('/', async (req: Request, res: Response) => {
       return
     }
 
-    // Get or create user for creator
-    let creator = await db.get<any>(
-      'SELECT * FROM users WHERE address = ? OR pubkey = ?',
-      [potData.creatorAddress, potData.creatorAddress]
-    )
+    // Use transaction for atomicity
+    await db.beginTransaction()
 
-    if (!creator) {
-      // Auto-create user if doesn't exist
-      const userId = uuidv4()
-      const now = new Date().toISOString()
-      await db.run(
-        'INSERT INTO users (id, pubkey, address, is_profile_complete, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [userId, potData.creatorAddress, potData.creatorAddress, 0, now, now]
+    try {
+      // Get or create user for creator
+      let creator = await db.get<any>(
+        'SELECT * FROM users WHERE address = ? OR pubkey = ?',
+        [potData.creatorAddress, potData.creatorAddress]
       )
-      creator = await db.get<any>('SELECT * FROM users WHERE id = ?', [userId])
-    }
 
-    const potId = uuidv4()
-    const now = new Date().toISOString()
-
-    await db.run(
-      `INSERT INTO pots (id, name, description, creator_id, pot_pubkey, vault_pubkey, target_amount, total_contributed, target_date, unlock_timestamp, currency, category, signers_required, recipient_address, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        potId,
-        potData.name,
-        potData.description || null,
-        creator.id,
-        potData.potPubkey || null,
-        potData.vaultPubkey || null,
-        potData.targetAmount,
-        0, // total_contributed starts at 0
-        potData.targetDate,
-        potData.unlockTimestamp || 0,
-        potData.currency,
-        potData.category,
-        potData.signersRequired || 1,
-        potData.recipientAddress || null,
-        now
-      ]
-    )
-
-    // Add contributors
-    if (potData.contributors && potData.contributors.length > 0) {
-      for (const contributorAddress of potData.contributors) {
-        let contributor = await db.get<any>(
-          'SELECT * FROM users WHERE address = ? OR pubkey = ?',
-          [contributorAddress, contributorAddress]
-        )
-
-        if (!contributor) {
-          const userId = uuidv4()
-          const now = new Date().toISOString()
-          await db.run(
-            'INSERT INTO users (id, pubkey, address, is_profile_complete, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-            [userId, contributorAddress, contributorAddress, 0, now, now]
-          )
-          contributor = await db.get<any>('SELECT * FROM users WHERE id = ?', [userId])
-        }
-
+      if (!creator) {
+        // Auto-create user if doesn't exist
+        const userId = uuidv4()
+        const now = new Date().toISOString()
         await db.run(
-          'INSERT OR IGNORE INTO pot_contributors (pot_id, user_id) VALUES (?, ?)',
-          [potId, contributor.id]
+          'INSERT INTO users (id, pubkey, address, is_profile_complete, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+          [userId, potData.creatorAddress, potData.creatorAddress, 0, now, now]
         )
+        creator = await db.get<any>('SELECT * FROM users WHERE id = ?', [userId])
       }
+
+      const potId = uuidv4()
+      const now = new Date().toISOString()
+
+      await db.run(
+        `INSERT INTO pots (id, name, description, creator_id, pot_pubkey, vault_pubkey, target_amount, total_contributed, target_date, unlock_timestamp, currency, category, signers_required, recipient_address, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          potId,
+          potData.name,
+          potData.description || null,
+          creator.id,
+          potData.potPubkey || null,
+          potData.vaultPubkey || null,
+          potData.targetAmount,
+          0, // total_contributed starts at 0
+          potData.targetDate,
+          potData.unlockTimestamp || 0,
+          potData.currency,
+          potData.category,
+          potData.signersRequired || 1,
+          potData.recipientAddress || null,
+          now
+        ]
+      )
+
+      // Add contributors
+      if (potData.contributors && potData.contributors.length > 0) {
+        for (const contributorAddress of potData.contributors) {
+          let contributor = await db.get<any>(
+            'SELECT * FROM users WHERE address = ? OR pubkey = ?',
+            [contributorAddress, contributorAddress]
+          )
+
+          if (!contributor) {
+            const userId = uuidv4()
+            const now = new Date().toISOString()
+            await db.run(
+              'INSERT INTO users (id, pubkey, address, is_profile_complete, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+              [userId, contributorAddress, contributorAddress, 0, now, now]
+            )
+            contributor = await db.get<any>('SELECT * FROM users WHERE id = ?', [userId])
+          }
+
+          await db.run(
+            'INSERT OR IGNORE INTO pot_contributors (pot_id, user_id) VALUES (?, ?)',
+            [potId, contributor.id]
+          )
+        }
+      }
+
+      // Create activity
+      await db.run(
+        `INSERT INTO activities (id, type, timestamp, user_id, pot_id, transaction_signature)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [uuidv4(), 'pot_created', now, creator.id, potId, potData.transactionSignature || null]
+      )
+
+      // Commit transaction
+      await db.commit()
+
+      const pot = await getPotWithDetails(potId)
+      res.status(201).json(pot)
+    } catch (error) {
+      // Rollback on any error
+      await db.rollback()
+      throw error
     }
-
-    const pot = await getPotWithDetails(potId)
-
-    // Create activity
-    await db.run(
-      `INSERT INTO activities (id, type, timestamp, user_id, pot_id, transaction_signature)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [uuidv4(), 'pot_created', now, creator.id, potId, potData.transactionSignature || null]
-    )
-
-    res.status(201).json(pot)
   } catch (error) {
     console.error('Error creating pot:', error)
     res.status(500).json({ error: 'Failed to create pot' })
@@ -397,56 +408,74 @@ router.post('/:id/contributions', async (req: Request, res: Response) => {
       return
     }
 
-    // Get or create contributor user
-    let contributor = await db.get<any>(
-      'SELECT * FROM users WHERE address = ? OR pubkey = ?',
-      [contributorAddress, contributorAddress]
-    )
+    // Use transaction for atomicity
+    await db.beginTransaction()
 
-    if (!contributor) {
-      const userId = uuidv4()
-      const now = new Date().toISOString()
-      await db.run(
-        'INSERT INTO users (id, pubkey, address, is_profile_complete, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [userId, contributorAddress, contributorAddress, 0, now, now]
+    try {
+      // Get or create contributor user
+      let contributor = await db.get<any>(
+        'SELECT * FROM users WHERE address = ? OR pubkey = ?',
+        [contributorAddress, contributorAddress]
       )
-      contributor = await db.get<any>('SELECT * FROM users WHERE id = ?', [userId])
+
+      if (!contributor) {
+        const userId = uuidv4()
+        const now = new Date().toISOString()
+        await db.run(
+          'INSERT INTO users (id, pubkey, address, is_profile_complete, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+          [userId, contributorAddress, contributorAddress, 0, now, now]
+        )
+        contributor = await db.get<any>('SELECT * FROM users WHERE id = ?', [userId])
+      }
+
+      const contributionId = uuidv4()
+      const now = new Date().toISOString()
+
+      await db.run(
+        'INSERT INTO contributions (id, pot_id, contributor_id, amount, currency, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
+        [contributionId, id, contributor.id, amount, currency, now]
+      )
+
+      // Update pot's total_contributed
+      await db.run(
+        'UPDATE pots SET total_contributed = total_contributed + ? WHERE id = ?',
+        [amount, id]
+      )
+
+      // Ensure contributor is in pot_contributors
+      await db.run(
+        'INSERT OR IGNORE INTO pot_contributors (pot_id, user_id) VALUES (?, ?)',
+        [id, contributor.id]
+      )
+
+      const contribution = await db.get<any>(
+        'SELECT * FROM contributions WHERE id = ?',
+        [contributionId]
+      )
+
+      // Create activity
+      await db.run(
+        `INSERT INTO activities (id, type, timestamp, user_id, pot_id, amount, currency, transaction_signature)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [uuidv4(), 'contribution', now, contributor.id, id, amount, currency, transactionSignature || null]
+      )
+
+      // Commit transaction
+      await db.commit()
+
+      res.status(201).json({
+        id: contribution.id,
+        potId: contribution.pot_id,
+        contributorAddress: contributor.address,
+        amount: contribution.amount,
+        currency: contribution.currency,
+        timestamp: contribution.timestamp
+      })
+    } catch (error) {
+      // Rollback on any error
+      await db.rollback()
+      throw error
     }
-
-    const contributionId = uuidv4()
-    const now = new Date().toISOString()
-
-    await db.run(
-      'INSERT INTO contributions (id, pot_id, contributor_id, amount, currency, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
-      [contributionId, id, contributor.id, amount, currency, now]
-    )
-
-    // Ensure contributor is in pot_contributors
-    await db.run(
-      'INSERT OR IGNORE INTO pot_contributors (pot_id, user_id) VALUES (?, ?)',
-      [id, contributor.id]
-    )
-
-    const contribution = await db.get<any>(
-      'SELECT * FROM contributions WHERE id = ?',
-      [contributionId]
-    )
-
-    // Create activity
-    await db.run(
-      `INSERT INTO activities (id, type, timestamp, user_id, pot_id, amount, currency, transaction_signature)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [uuidv4(), 'contribution', now, contributor.id, id, amount, currency, transactionSignature || null]
-    )
-
-    res.status(201).json({
-      id: contribution.id,
-      potId: contribution.pot_id,
-      contributorAddress: contributor.address,
-      amount: contribution.amount,
-      currency: contribution.currency,
-      timestamp: contribution.timestamp
-    })
   } catch (error) {
     console.error('Error adding contribution:', error)
     res.status(500).json({ error: 'Failed to add contribution' })
