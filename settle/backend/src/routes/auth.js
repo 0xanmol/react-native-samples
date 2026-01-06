@@ -1,9 +1,43 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+import { createRequire } from 'module';
+import { Connection, PublicKey } from '@solana/web3.js';
 import db from '../db/database.js';
 import { generateId } from '../utils/helpers.js';
 
+dotenv.config();
+
+// Use createRequire to load CommonJS version of tldparser
+const require = createRequire(import.meta.url);
+const { TldParser } = require('@onsol/tldparser');
+
 const router = express.Router();
+
+// Solana connection for domain resolution
+const RPC_ENDPOINT = process.env.SOLANA_RPC_ENDPOINT || 'https://api.mainnet-beta.solana.com';
+const connection = new Connection(RPC_ENDPOINT);
+
+// Helper function to resolve address to domain
+async function resolveAddressToDomain(address) {
+  try {
+    console.log(`[Auth] Resolving domain for address: ${address}`);
+    const parser = new TldParser(connection);
+    const publicKey = new PublicKey(address);
+    const domains = await parser.getParsedAllUserDomainsFromTld(publicKey, 'skr');
+
+    if (domains && domains.length > 0) {
+      const domain = domains[0].domain;
+      console.log(`[Auth] Found domain: ${domain}`);
+      return domain;
+    }
+    console.log(`[Auth] No .skr domain found for address`);
+    return null;
+  } catch (error) {
+    console.error(`[Auth] Error resolving domain:`, error.message);
+    return null;
+  }
+}
 
 // Connect wallet / Check if user exists
 router.post('/connect', async (req, res) => {
@@ -17,14 +51,26 @@ router.post('/connect', async (req, res) => {
       });
     }
 
+    // Resolve .skr domain for the address
+    const skrDomain = await resolveAddressToDomain(pubkey);
+
     // Check if user exists
     const user = await db.get(
-      'SELECT id, pubkey, name, phone, avatar_uri, is_profile_complete FROM users WHERE pubkey = ?',
+      'SELECT id, pubkey, name, phone, avatar_uri, skr_domain, is_profile_complete FROM users WHERE pubkey = ?',
       [pubkey]
     );
 
     if (user) {
-      // User exists - return token
+      // User exists - update domain if it changed
+      if (user.skr_domain !== skrDomain) {
+        await db.run(
+          'UPDATE users SET skr_domain = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [skrDomain, user.id]
+        );
+        user.skr_domain = skrDomain;
+      }
+
+      // Return token
       const token = jwt.sign({ userId: user.id, pubkey: user.pubkey }, process.env.JWT_SECRET, {
         expiresIn: '30d'
       });
@@ -40,11 +86,11 @@ router.post('/connect', async (req, res) => {
       });
     }
 
-    // New user - create account but mark profile as incomplete
+    // New user - create account with domain
     const userId = generateId();
     await db.run(
-      `INSERT INTO users (id, pubkey, is_profile_complete) VALUES (?, ?, 0)`,
-      [userId, pubkey]
+      `INSERT INTO users (id, pubkey, skr_domain, is_profile_complete) VALUES (?, ?, ?, 0)`,
+      [userId, pubkey, skrDomain]
     );
 
     // Create default email settings
@@ -64,6 +110,7 @@ router.post('/connect', async (req, res) => {
         user: {
           id: userId,
           pubkey,
+          skr_domain: skrDomain,
           name: null,
           is_profile_complete: 0
         },
@@ -109,7 +156,7 @@ router.post('/complete-profile', async (req, res) => {
     );
 
     const user = await db.get(
-      'SELECT id, pubkey, name, phone, avatar_uri, is_profile_complete FROM users WHERE id = ?',
+      'SELECT id, pubkey, name, phone, avatar_uri, skr_domain, is_profile_complete FROM users WHERE id = ?',
       [decoded.userId]
     );
 

@@ -14,7 +14,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { logout } from "@/apis/auth";
-import { useAuthorization, useTheme } from "@/components/providers";
+import { useTheme } from "@/components/providers";
+import { useMobileWalletAdapter } from "@wallet-ui/react-native-web3js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "@/constants/theme";
 
@@ -23,11 +24,12 @@ interface UserData {
   name: string;
   phone: string;
   pubkey?: string;
+  skr_domain?: string;
 }
 
 export default function AccountScreen() {
   const { colorScheme, themeMode, setThemeMode, isDark } = useTheme();
-  const { authorization, deauthorizeSession } = useAuthorization();
+  const { account, disconnect } = useMobileWalletAdapter();
   const colors = Colors[colorScheme ?? 'light'];
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -58,8 +60,8 @@ export default function AccountScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            // Deauthorize wallet session
-            await deauthorizeSession();
+            // Disconnect wallet session
+            await disconnect();
 
             // Logout from backend and clear all local data
             await logout();
@@ -103,7 +105,9 @@ export default function AccountScreen() {
               <MaterialIcons name="person" size={24} color={colors.icon} />
               <View style={styles.infoTextContainer}>
                 <Text style={[styles.infoLabel, { color: colors.icon }]}>Name</Text>
-                <Text style={[styles.infoValue, { color: colors.text }]}>{userData?.name || 'N/A'}</Text>
+                <Text style={[styles.infoValue, { color: colors.text }]}>
+                  {userData?.name || 'N/A'}
+                </Text>
               </View>
             </View>
 
@@ -122,9 +126,9 @@ export default function AccountScreen() {
             <View style={styles.infoRow}>
               <MaterialIcons name="account-balance-wallet" size={24} color={colors.icon} />
               <View style={styles.infoTextContainer}>
-                <Text style={[styles.infoLabel, { color: colors.icon }]}>Wallet Address</Text>
+                <Text style={[styles.infoLabel, { color: colors.icon }]}>Wallet</Text>
                 <Text style={[styles.pubkeyValue, { color: colors.text }]} numberOfLines={1} ellipsizeMode="middle">
-                  {authorization?.selectedAccount?.address || 'Not connected'}
+                  {userData?.skr_domain || account?.publicKey?.toString() || 'Not connected'}
                 </Text>
               </View>
             </View>

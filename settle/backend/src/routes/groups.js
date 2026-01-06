@@ -32,7 +32,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
 
     const members = await db.all(
-      `SELECT u.id, u.name, u.pubkey, u.avatar_uri
+      `SELECT u.id, u.name, u.pubkey, u.avatar_uri, u.skr_domain
        FROM users u
        INNER JOIN group_members gm ON u.id = gm.user_id
        WHERE gm.group_id = ?`,

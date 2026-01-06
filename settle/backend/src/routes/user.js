@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const user = await db.get(
-      'SELECT id, pubkey, name, phone, avatar_uri, timezone, language, is_profile_complete FROM users WHERE id = ?',
+      'SELECT id, pubkey, name, phone, avatar_uri, skr_domain, timezone, language, is_profile_complete FROM users WHERE id = ?',
       [req.userId]
     );
 
@@ -43,7 +43,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
     );
 
     const user = await db.get(
-      'SELECT id, pubkey, name, phone FROM users WHERE id = ?',
+      'SELECT id, pubkey, name, phone, skr_domain FROM users WHERE id = ?',
       [req.userId]
     );
 

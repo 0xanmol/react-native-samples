@@ -9,12 +9,12 @@ const router = express.Router();
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const friends = await db.all(
-      `SELECT u.id, u.name, u.pubkey, u.phone, u.avatar_uri, f.status, f.created_at
+      `SELECT u.id, u.name, u.pubkey, u.phone, u.avatar_uri, u.skr_domain, f.status, f.created_at
        FROM friends f
        INNER JOIN users u ON (f.friend_id = u.id)
        WHERE f.user_id = ? AND f.status = 'accepted'
        UNION
-       SELECT u.id, u.name, u.pubkey, u.phone, u.avatar_uri, f.status, f.created_at
+       SELECT u.id, u.name, u.pubkey, u.phone, u.avatar_uri, u.skr_domain, f.status, f.created_at
        FROM friends f
        INNER JOIN users u ON (f.user_id = u.id)
        WHERE f.friend_id = ? AND f.status = 'accepted'
@@ -89,7 +89,7 @@ router.post('/', authMiddleware, async (req, res) => {
     );
 
     const friend = await db.get(
-      'SELECT id, name, pubkey, phone, avatar_uri FROM users WHERE id = ?',
+      'SELECT id, name, pubkey, phone, avatar_uri, skr_domain FROM users WHERE id = ?',
       [friendId]
     );
 

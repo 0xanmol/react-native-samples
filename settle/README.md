@@ -20,9 +20,9 @@ Settle is a **demo application** showcasing how to integrate Solana Mobile Walle
 |---|---|---|
 | <img src="https://github.com/user-attachments/assets/0f0498cf-5973-4fa1-bfae-bbbea8448928" alt="Groups Screen" height="360" /> | <img src="https://github.com/user-attachments/assets/f8a251c0-b58f-4226-a802-21d8fa1d917f" alt="Create Group" height="360" /> | <img src="https://github.com/user-attachments/assets/4b2cba59-5450-45f2-8b52-2896e4c5cc2f" alt="Group Details" height="360" /> |
 
-| Balances | Group Settings | Add Members |
-|---|---|---|
-| <img src="https://github.com/user-attachments/assets/66fed02c-35d1-4453-aa17-688a7f22b106" alt="Balances" height="360" /> | <img src="https://github.com/user-attachments/assets/508c620c-42c6-464f-b7f3-43aa400d3327" alt="Group Settings" height="360" /> | <img src="https://github.com/user-attachments/assets/7b015d1d-916b-4836-9d71-4c14e0b1a8be" alt="Add Members" height="360" /> |
+| Balances | Group Settings | Group Settings(.skr domain)| Add Members |
+|---|---|---|---|
+| <img src="https://github.com/user-attachments/assets/66fed02c-35d1-4453-aa17-688a7f22b106" alt="Balances" height="360" /> | <img src="https://github.com/user-attachments/assets/508c620c-42c6-464f-b7f3-43aa400d3327" alt="Group Settings" height="360" /> | <img height="360" alt="Screenshot_20251126_234944" src="https://github.com/user-attachments/assets/64212a4f-d796-4404-8f72-d760d1e06565" />| <img src="https://github.com/user-attachments/assets/7b015d1d-916b-4836-9d71-4c14e0b1a8be" alt="Add Members" height="360" /> |
 
 **Create and handle expenses**
 
@@ -44,14 +44,16 @@ Settle is a **demo application** showcasing how to integrate Solana Mobile Walle
 
 **Account**
 
-| Account |
-|---|
-| <img src="https://github.com/user-attachments/assets/fce60f42-799b-4f62-8cd6-2e2032506d92" alt="Account" height="360" /> |
+| Account | Account(.skr domain) |
+|---|---|
+| <img src="https://github.com/user-attachments/assets/fce60f42-799b-4f62-8cd6-2e2032506d92" alt="Account" height="360" /> | <img height="360" alt="Screenshot_20251126_234932" src="https://github.com/user-attachments/assets/444f3c3c-c4f9-480a-8eeb-410450f662ff" />
+|
 
 
 
 **Key Features:**
 - Wallet-based authentication (Solana Mobile Wallet Adapter)
+- **AllDomains (.skr) integration** - Display user-friendly domains instead of public keys
 - Add friends via phone number or public key
 - Create expense groups and track shared costs
 - Split expenses with flexible allocation
@@ -72,8 +74,8 @@ settle/
 - React Native + Expo (SDK 52)
 - TypeScript
 - Expo Router (file-based navigation)
-- Solana Mobile Wallet Adapter
-- @solana/web3.js v1.98.4
+- Wallet UI SDK (@wallet-ui/react-native-web3js)
+- @solana/web3.js
 
 **Setup:**
 ```bash
@@ -97,6 +99,7 @@ npx expo run:android
 - Node.js + Express
 - SQLite3 (local database)
 - JWT authentication (wallet-based)
+- AllDomains SDK (@onsol/tldparser) - .skr domain resolution
 
 **Setup:**
 ```bash

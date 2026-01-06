@@ -21,6 +21,7 @@ export interface GroupMember {
   id: string;
   name: string;
   email: string;
+  skr_domain?: string;
   avatar?: string;
 }
 

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT,
   phone TEXT,
   avatar_uri TEXT,
+  skr_domain TEXT,
   timezone TEXT DEFAULT 'UTC',
   language TEXT DEFAULT 'en',
   is_profile_complete INTEGER DEFAULT 0,

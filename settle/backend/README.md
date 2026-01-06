@@ -11,6 +11,7 @@ Express.js backend with SQLite3 database for the Settle app (Splitwise clone for
 ## Features
 
 - Wallet-based authentication (Solana public key)
+- **AllDomains (.skr) domain resolution** - Automatically resolves and displays user-friendly .skr domains
 - Groups & expense management
 - Friend system
 - Balance calculation & settlements
@@ -157,6 +158,25 @@ Expenses are split among group members with flexible allocation. The backend cal
 When users pay each other via SOL transfers, the frontend sends the transaction signature to the backend, which records the settlement and updates balances. The backend doesn't verify on-chain transactions but trusts the client to provide valid signatures for activity tracking.
 
 **Files:** [routes/balances.js](routes/balances.js)
+
+### AllDomains (.skr) Domain Resolution
+
+The backend integrates with AllDomains SDK (`@onsol/tldparser`) to automatically resolve user-friendly `.skr` domains for Solana wallet addresses. When a user connects their wallet, the backend:
+
+1. Queries the Solana blockchain for any `.skr` domains associated with the wallet address
+2. Stores the resolved domain in the database (`skr_domain` column in users table)
+3. Updates the domain on each login if it has changed
+4. Returns domain data in all user-related API responses
+
+The frontend then displays the `.skr` domain instead of the raw public key wherever wallet addresses are shown, providing a better user experience similar to ENS domains on Ethereum.
+
+**Tech Stack:**
+- `@onsol/tldparser` - AllDomains SDK for .skr domain resolution
+- `@solana/web3.js` - Solana blockchain connection
+
+**Files:** [routes/auth.js](routes/auth.js) (domain resolution logic), [db/schema.sql](db/schema.sql) (database schema)
+
+**Configuration:** Set `SOLANA_RPC_ENDPOINT` in `.env` file (defaults to Solana mainnet)
 
 ---
 

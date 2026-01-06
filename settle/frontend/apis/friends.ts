@@ -10,6 +10,7 @@ export interface Friend {
   name: string;
   email: string;
   phoneNumber?: string;
+  skr_domain?: string;
   avatar?: string;
 }
 

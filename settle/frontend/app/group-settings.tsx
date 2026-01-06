@@ -14,6 +14,7 @@ interface GroupMember {
   id: string;
   name: string;
   pubkey: string;
+  skr_domain?: string;
   avatar_uri?: string;
 }
 
@@ -294,7 +295,7 @@ export default function GroupSettingsScreen() {
                       {member.name}{isCurrentUser ? ' (you)' : ''}
                     </Text>
                     <Text style={[styles.memberEmail, { color: colors.icon }]}>
-                      {member.pubkey?.substring(0, 16)}...
+                      {member.skr_domain || `${member.pubkey?.substring(0, 16)}...`}
                     </Text>
                   </View>
                 </View>

@@ -100,7 +100,7 @@ const calculateBalances = async (userId, groupId = null) => {
     if (Math.abs(amount) < 0.01) continue; // Skip negligible amounts
 
     const user = await db.get(
-      'SELECT id, name, pubkey, avatar_uri FROM users WHERE id = ?',
+      'SELECT id, name, pubkey, avatar_uri, skr_domain FROM users WHERE id = ?',
       [otherUserId]
     );
 
@@ -111,6 +111,7 @@ const calculateBalances = async (userId, groupId = null) => {
         userName: user.name,
         userPubkey: user.pubkey,
         userAvatar: user.avatar_uri,
+        userSkrDomain: user.skr_domain,
         amount: Math.abs(amount),
         type: amount > 0 ? 'gets_back' : 'owes'
       });
