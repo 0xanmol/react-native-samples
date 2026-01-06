@@ -8,46 +8,45 @@ Cause Pots is a **demo application** showcasing how to build a mobile dApp on So
 
 ## Screenshots & Demo
 
-<!--
-TODO: Add screenshots here
-To add screenshots, replace the placeholder text below with actual images:
-1. Upload screenshots to GitHub (create an issue, drag images, copy URLs)
-2. Replace placeholder text with: <img src="URL" alt="Description" height="360" />
--->
-
-**Login and Wallet Connection**
+### Login and Wallet Connection
 
 | Welcome Screen | Connect Wallet | Create Profile |
 |---|---|---|
-| *[Screenshot placeholder]* | *[Screenshot placeholder]* | *[Screenshot placeholder]* |
+| <img src="https://github.com/user-attachments/assets/42c9d608-9976-4753-865c-a35ac6a037b4" width="108" /> | <img src="https://github.com/user-attachments/assets/00fc1eb6-372b-49d2-a2a6-a7e5b0b9edbf" width="108" /> | <img src="https://github.com/user-attachments/assets/cea6a6cd-709d-49b3-90c7-219d725ac0de" width="108" /> |
 
-**Pot Creation and Management**
+---
 
-| Pots List | Create Pot | Pot Details |
+### Pot Creation and Management
+
+| Pots List | Create Pot | Pot Details | Add Contribution |
+|---|---|---|---|
+| <img src="https://github.com/user-attachments/assets/a195cef9-509e-4cf3-8bf5-93ef8ebf77c3" width="108" /> | <img src="https://github.com/user-attachments/assets/97d55e81-c972-49fa-8903-37b5827526e9" width="108" /> <img src="https://github.com/user-attachments/assets/b958cf2d-f760-4fcc-ae1a-b1162bbe68b4" width="108" /> | <img src="https://github.com/user-attachments/assets/e7c904a8-36ab-4c37-b0b0-4bad7c6ce95f" width="108" /> | <img src="https://github.com/user-attachments/assets/1cf09f0a-cb3c-4849-8a6a-e860b835c3ac" width="108" /> |
+
+---
+
+### Multi-Signature Release Flow
+
+| Sign for Release | Release Funds | After Release |
 |---|---|---|
-| *[Screenshot placeholder]* | *[Screenshot placeholder]* | *[Screenshot placeholder]* |
+| <img src="https://github.com/user-attachments/assets/f59fea39-0ef0-4011-b6d2-4e5547c615fd" width="108" /> | <img src="https://github.com/user-attachments/assets/e36462cc-94e4-41a8-8965-652a9054e80e" width="108" /> |<img width="108" height="240" alt="after release" src="https://github.com/user-attachments/assets/56219438-0524-42ac-a5ce-34216360b41b" />|
 
-| Add Contribution | Progress View |
-|---|---|
-| *[Screenshot placeholder]* | *[Screenshot placeholder]* |
 
-**Multi-Signature Release Flow**
+---
 
-| Time-Lock Active | Sign for Release | Release Funds |
+### Friends & Account Management
+
+| Friends List | Add Friend | Account Details |
 |---|---|---|
-| *[Screenshot placeholder]* | *[Screenshot placeholder]* | *[Screenshot placeholder]* |
+| <img src="https://github.com/user-attachments/assets/19932877-cd7b-4308-87c7-09184ad35eea" width="108" /> | <img src="https://github.com/user-attachments/assets/53bdd0a9-73a3-4a8c-81a0-9ca4515fd38b" width="108" /> | <img src="https://github.com/user-attachments/assets/f9cdb9e5-e4d6-4768-9b97-f3a59d063905" width="108" /> |
 
-**Friend Management**
+---
 
-| Friends List | Add Friend | Friend Details |
-|---|---|---|
-| *[Screenshot placeholder]* | *[Screenshot placeholder]* | *[Screenshot placeholder]* |
-
-**Activity Tracking**
+### Activity Tracking
 
 | Activity Feed | Activity Details | Blockchain Explorer |
 |---|---|---|
-| *[Screenshot placeholder]* | *[Screenshot placeholder]* | *[Screenshot placeholder]* |
+| <img src="https://github.com/user-attachments/assets/b422b517-eea3-4d76-ab85-3ac7bce2bfc1" width="108" /> | <img src="https://github.com/user-attachments/assets/8f27fe0a-b7d1-4a99-afaf-fdb131cac9f9" width="108" /> | <img src="https://github.com/user-attachments/assets/395d8765-eeda-4f6f-9fa7-28ab190108f9" width="108" /> |
+
 
 **Key Features:**
 - Time-locked collaborative savings pots
