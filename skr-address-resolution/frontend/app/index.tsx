@@ -13,14 +13,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { AppText } from '@/components/app-text';
 import { useDomainLookup, SearchMode, resolveAddressToDomain } from '@/hooks/use-domain-lookup';
-import { useMobileWalletAdapter } from '@wallet-ui/react-native-web3js';
+import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import { router, Redirect } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { ellipsify } from '@/utils/ellipsify';
 import Toast from 'react-native-toast-message';
 
 export default function Index() {
-  const { account, disconnect } = useMobileWalletAdapter();
+  const { account, disconnect } = useMobileWallet();
   const [searchMode, setSearchMode] = useState<SearchMode>('domain');
   const [inputValue, setInputValue] = useState('');
   const [copied, setCopied] = useState(false);
