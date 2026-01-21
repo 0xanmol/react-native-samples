@@ -190,7 +190,7 @@ export default function CreatePotScreen() {
     }
 
     try {
-      const creatorAddress = account.publicKey.toBase58()
+      const creatorAddress = account.address.toBase58()
       const uniqueContributors = new Set([creatorAddress, ...Array.from(contributors)])
       const allContributors = Array.from(uniqueContributors)
 
@@ -256,7 +256,7 @@ export default function CreatePotScreen() {
 
       // Refetch activities to include the new pot creation activity with tx signature
       if (account) {
-        await fetchActivities(account.publicKey.toBase58())
+        await fetchActivities(account.address.toBase58())
       }
 
       // Use requestAnimationFrame to ensure all state updates complete

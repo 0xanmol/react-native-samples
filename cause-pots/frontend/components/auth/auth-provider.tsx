@@ -32,12 +32,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   // Authenticate with backend when wallet connects (only once)
   useEffect(() => {
-    if (account?.publicKey && !hasAuthenticated && !user) {
+    if (account?.address && !hasAuthenticated && !user) {
       const authenticateUser = async () => {
         try {
           await authenticate({
-            pubkey: account.publicKey.toString(),
-            address: account.publicKey.toString(),
+            pubkey: account.address.toString(),
+            address: account.address.toString(),
           })
           setHasAuthenticated(true)
         } catch (error) {

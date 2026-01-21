@@ -12,11 +12,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { connectWallet } from '@/apis/auth';
-import { useMobileWalletAdapter } from '@wallet-ui/react-native-web3js';
+import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import Toast from 'react-native-toast-message';
 
 export default function LoginScreen() {
-  const { account, connect } = useMobileWalletAdapter();
+  const { account, connect } = useMobileWallet();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
@@ -27,9 +27,9 @@ export default function LoginScreen() {
 
   const checkCachedSession = async () => {
     try {
-      // Check if we have a cached account from MobileWalletAdapterProvider
-      if (account?.publicKey) {
-        const address = account.publicKey.toString();
+      // Check if we have a cached account from MobileWalletProvider
+      if (account?.address) {
+        const address = account.address.toString();
         console.log('Found cached wallet session:', address);
 
         // Connect to backend with cached wallet
@@ -57,7 +57,7 @@ export default function LoginScreen() {
       console.log('Requesting wallet authorization...');
 
       const connectedAccount = await connect();
-      const address = connectedAccount.publicKey.toString();
+      const address = connectedAccount.address.toString();
 
       console.log('Wallet authorized:', address);
 

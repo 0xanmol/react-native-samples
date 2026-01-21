@@ -85,7 +85,7 @@ export default function PotDetailsScreen() {
     )
   }
 
-  const userAddress = account.publicKey.toBase58()
+  const userAddress = account.address.toBase58()
   const totalContributed = pot.contributions.reduce((sum, c) => sum + c.amount, 0)
   const progress = Math.min((totalContributed / pot.targetAmount) * 100, 100)
   const isTargetReached = progress >= 100

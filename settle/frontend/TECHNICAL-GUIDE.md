@@ -161,7 +161,7 @@ npx expo run:android
 ### Implementation: `app/_layout.tsx`
 
 ```typescript
-import { MobileWalletAdapterProvider } from '@wallet-ui/react-native-web3js';
+import { MobileWalletProvider } from '@wallet-ui/react-native-web3js';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SOLANA_CLUSTER, SOLANA_RPC_ENDPOINT } from '@/constants/wallet';
 
@@ -172,13 +172,13 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MobileWalletAdapterProvider
-        clusterId={clusterId}
+      <MobileWalletProvider
+        chain={clusterId}
         endpoint={SOLANA_RPC_ENDPOINT}
         identity={{ name: 'Settle' }}
       >
         {/* App content */}
-      </MobileWalletAdapterProvider>
+      </MobileWalletProvider>
     </QueryClientProvider>
   );
 }
@@ -187,14 +187,14 @@ export default function RootLayout() {
 ### Usage in Components: `app/login.tsx`
 
 ```typescript
-import { useMobileWalletAdapter } from '@wallet-ui/react-native-web3js';
+import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 
 export default function LoginScreen() {
-  const { account, connect } = useMobileWalletAdapter();
+  const { account, connect } = useMobileWallet();
 
   const handleConnectWallet = async () => {
     const connectedAccount = await connect();
-    const address = connectedAccount.publicKey.toString();
+    const address = connectedAccount.address.toString();
 
     // Connect to backend with wallet address
     const response = await connectWallet(address);
@@ -243,14 +243,14 @@ identity={{ name: 'Settle' }}
 ### Implementation: `app/balances.tsx`
 
 ```typescript
-import { useMobileWalletAdapter } from '@wallet-ui/react-native-web3js';
+import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import { useConnection } from '@/components/providers';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 export default function BalancesScreen() {
-  const { account, signAndSendTransaction } = useMobileWalletAdapter();
+  const { account, signAndSendTransaction } = useMobileWallet();
   const connection = useConnection();
-  const publicKey = account?.publicKey;
+  const address = account?.address;
   const connected = !!account;
 
   const handleSettleUp = async (recipientPubkey, amount, lamports) => {
@@ -259,12 +259,12 @@ export default function BalancesScreen() {
 
     // Create transfer instruction
     const transaction = new Transaction({
-      feePayer: publicKey,
+      feePayer: address,
       blockhash,
       lastValidBlockHeight,
     }).add(
       SystemProgram.transfer({
-        fromPubkey: publicKey,
+        fromPubkey: address,
         toPubkey: new PublicKey(recipientPubkey),
         lamports,
       })
@@ -386,7 +386,7 @@ The frontend receives domain data from API responses and displays it with fallba
 
 ```typescript
 // Example from app/(tabs)/account.tsx
-{userData?.skr_domain || account?.publicKey?.toString() || 'Not connected'}
+{userData?.skr_domain || account?.address?.toString() || 'Not connected'}
 ```
 
 ### Related Files
