@@ -23,8 +23,7 @@ async function resolveAddressToDomain(address) {
   try {
     console.log(`[Auth] Resolving domain for address: ${address}`);
     const parser = new TldParser(connection);
-    const publicKey = new PublicKey(address);
-    const domains = await parser.getParsedAllUserDomainsFromTld(publicKey, 'skr');
+    const domains = await parser.getParsedAllUserDomainsFromTld(new PublicKey(address), 'skr');
 
     if (domains && domains.length > 0) {
       const domain = domains[0].domain;

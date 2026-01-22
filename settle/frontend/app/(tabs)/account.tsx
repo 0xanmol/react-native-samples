@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { logout } from "@/apis/auth";
 import { useTheme } from "@/components/providers";
-import { useMobileWalletAdapter } from "@wallet-ui/react-native-web3js";
+import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "@/constants/theme";
 
@@ -29,7 +29,7 @@ interface UserData {
 
 export default function AccountScreen() {
   const { colorScheme, themeMode, setThemeMode, isDark } = useTheme();
-  const { account, disconnect } = useMobileWalletAdapter();
+  const { account, disconnect } = useMobileWallet();
   const colors = Colors[colorScheme ?? 'light'];
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -128,7 +128,7 @@ export default function AccountScreen() {
               <View style={styles.infoTextContainer}>
                 <Text style={[styles.infoLabel, { color: colors.icon }]}>Wallet</Text>
                 <Text style={[styles.pubkeyValue, { color: colors.text }]} numberOfLines={1} ellipsizeMode="middle">
-                  {userData?.skr_domain || account?.publicKey?.toString() || 'Not connected'}
+                  {userData?.skr_domain || account?.address?.toString() || 'Not connected'}
                 </Text>
               </View>
             </View>

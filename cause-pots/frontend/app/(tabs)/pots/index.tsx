@@ -40,7 +40,7 @@ export default function PotsScreen() {
   const { getUserPots, pots } = useAppStore()
   // Show all pots if user is connected, or filter by user address
   const allUserPots = account ? (() => {
-    const userAddress = account.publicKey.toBase58()
+    const userAddress = account.address.toBase58()
     const userPots = getUserPots(userAddress)
     return userPots.length > 0 ? userPots : pots
   })() : []

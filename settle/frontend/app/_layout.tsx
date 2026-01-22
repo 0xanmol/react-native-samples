@@ -12,7 +12,7 @@ import { ThemeProvider, ConnectionProvider } from '@/components/providers';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import Toast from 'react-native-toast-message';
 import { SOLANA_RPC_ENDPOINT, SOLANA_CLUSTER } from '@/constants/wallet';
-import { MobileWalletAdapterProvider } from '@wallet-ui/react-native-web3js';
+import { MobileWalletProvider } from '@wallet-ui/react-native-web3js';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
@@ -68,8 +68,8 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MobileWalletAdapterProvider
-        clusterId={clusterId}
+      <MobileWalletProvider
+        chain={clusterId}
         endpoint={SOLANA_RPC_ENDPOINT}
         identity={{ name: 'Settle' }}
       >
@@ -81,7 +81,7 @@ export default function RootLayout() {
             <RootLayoutInner />
           </ThemeProvider>
         </ConnectionProvider>
-      </MobileWalletAdapterProvider>
+      </MobileWalletProvider>
     </QueryClientProvider>
   );
 }

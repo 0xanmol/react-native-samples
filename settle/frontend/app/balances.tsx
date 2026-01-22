@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getBalances, settleUp, Balance } from '@/apis/balances';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSolToUsdRate, convertUsdToSol } from '@/solana/transaction';
-import { useMobileWalletAdapter } from '@wallet-ui/react-native-web3js';
+import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import { useConnection } from '@/components/providers';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import Toast from 'react-native-toast-message';
@@ -21,9 +21,9 @@ export default function BalancesScreen() {
   const colors = Colors[colorScheme ?? 'light'];
 
   // Solana hooks
-  const { account, signAndSendTransaction } = useMobileWalletAdapter();
+  const { account, signAndSendTransaction } = useMobileWallet();
   const connection = useConnection();
-  const publicKey = account?.publicKey;
+  const address = account?.address;
   const connected = !!account;
 
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -96,7 +96,7 @@ export default function BalancesScreen() {
     }
 
     // Check wallet connection
-    if (!connected || !publicKey) {
+    if (!connected || !address) {
       Toast.show({
         type: 'error',
         text1: 'Wallet Not Connected',
@@ -127,21 +127,21 @@ export default function BalancesScreen() {
       });
 
       // Step 2: Build transaction
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      const { context: { slot: minContextSlot }, value: { blockhash, lastValidBlockHeight } } = await connection.getLatestBlockhashAndContext();
 
       const transaction = new Transaction({
-        feePayer: publicKey,
+        feePayer: address,
         blockhash,
         lastValidBlockHeight,
       }).add(
         SystemProgram.transfer({
-          fromPubkey: publicKey,
+          fromPubkey: address,
           toPubkey: new PublicKey(recipientPubkey),
           lamports,
         })
       );
 
-      const signature = await signAndSendTransaction(transaction);
+      const signature = await signAndSendTransaction(transaction, minContextSlot);
       console.log('Transaction sent:', signature);
 
       // Step 4: Confirm transaction

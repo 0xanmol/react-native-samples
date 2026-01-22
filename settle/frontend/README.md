@@ -108,7 +108,7 @@ settle/frontend/
 
 ### Wallet Integration
 
-Uses `@wallet-ui/react-native-web3js` SDK for Mobile Wallet Adapter functionality, providing a unified hook (`useMobileWalletAdapter()`) for all wallet operations.
+Uses `@wallet-ui/react-native-web3js` SDK for Mobile Wallet Adapter functionality, providing a unified hook (`useMobileWallet()`) for all wallet operations.
 
 **Files:** [app/_layout.tsx](app/_layout.tsx), [app/login.tsx](app/login.tsx)
 

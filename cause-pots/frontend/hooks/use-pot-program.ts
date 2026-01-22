@@ -18,8 +18,8 @@ export function usePotProgram() {
     if (!account) {
       throw new Error('Wallet not connected')
     }
-    // account.publicKey is already a PublicKey object
-    return account.publicKey
+    // account.address is already a PublicKey object
+    return account.address
   }
 
   // Create pot

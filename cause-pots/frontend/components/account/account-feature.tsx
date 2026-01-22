@@ -35,9 +35,9 @@ export function AccountFeature() {
   const [lastSynced, setLastSynced] = useState<Date | null>(null)
   const [copied, setCopied] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
-  const invalidateBalance = useGetBalanceInvalidate({ address: account?.publicKey as PublicKey })
-  const invalidateTokenAccounts = useGetTokenAccountsInvalidate({ address: account?.publicKey as PublicKey })
-  const tokenAccountsQuery = useGetTokenAccounts({ address: account?.publicKey })
+  const invalidateBalance = useGetBalanceInvalidate({ address: account?.address as PublicKey })
+  const invalidateTokenAccounts = useGetTokenAccountsInvalidate({ address: account?.address as PublicKey })
+  const tokenAccountsQuery = useGetTokenAccounts({ address: account?.address })
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export function AccountFeature() {
 
   const handleCopyAddress = useCallback(() => {
     if (!account) return
-    Clipboard.setString(account.publicKey.toString())
+    Clipboard.setString(account.address.toString())
     setCopied(true)
     if (copyTimeoutRef.current) {
       clearTimeout(copyTimeoutRef.current)
@@ -149,7 +149,7 @@ export function AccountFeature() {
               <View style={styles.heroHeader}>
                 <View style={styles.heroLabelBlock}>
                   <AppText style={styles.heroLabel} numberOfLines={1}>Portfolio balance</AppText>
-                  <AccountUiBalance address={account.publicKey} textColor='#041015' />
+                  <AccountUiBalance address={account.address} textColor='#041015' />
                 </View>
                 <TouchableOpacity
                   onPress={handleCopyAddress}
@@ -168,7 +168,7 @@ export function AccountFeature() {
               </View>
               <View style={styles.addressPill}>
                 <MaterialIcons name='key' size={16} color='#041015' />
-                <AppText style={styles.addressPillText} numberOfLines={1}>{ellipsify(account.publicKey.toString(), 12)}</AppText>
+                <AppText style={styles.addressPillText} numberOfLines={1}>{ellipsify(account.address.toString(), 12)}</AppText>
               </View>
               <View style={styles.heroStatsRow}>
                 {stats.map((stat) => (

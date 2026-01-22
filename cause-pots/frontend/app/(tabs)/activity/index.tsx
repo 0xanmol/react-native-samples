@@ -37,7 +37,7 @@ export default function ActivityScreen() {
   // Fetch activities when component mounts or account changes
   useEffect(() => {
     if (account) {
-      const userAddress = account.publicKey.toBase58();
+      const userAddress = account.address.toBase58();
       fetchActivities(userAddress).catch((error) => {
         showToast({
           title: 'Failed to load activities',
@@ -92,7 +92,7 @@ export default function ActivityScreen() {
   const relevantActivities = useMemo(() => {
     if (!account) return activities;
 
-    const userAddress = account.publicKey.toBase58();
+    const userAddress = account.address.toBase58();
     const userPots = useAppStore.getState().getUserPots(userAddress);
     const userFriends = useAppStore.getState().friends;
 

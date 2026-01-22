@@ -15,8 +15,8 @@ const USER_ID_STORAGE_KEY = '@cause_pots:user_id'
  *
  * // After wallet connects:
  * await authenticate({
- *   pubkey: wallet.publicKey.toString(),
- *   address: wallet.publicKey.toString(),
+ *   pubkey: wallet.address.toString(),
+ *   address: wallet.address.toString(),
  *   name: 'Optional Name'
  * })
  * ```
