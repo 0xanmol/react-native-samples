@@ -1,9 +1,0 @@
-{
-    "search.exclude": {
-        "**/node_modules": false
-    },
-    "explorer.autoRevealExclude": {
-        "**/node_modules": false
-    },
-    "typescript.tsdk": "node_modules/typescript/lib"
-}

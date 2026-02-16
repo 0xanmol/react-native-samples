@@ -37,3 +37,9 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# IDE
+.vscode/
+
+# Native builds
+android/

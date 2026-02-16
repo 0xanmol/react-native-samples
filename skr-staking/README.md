@@ -486,13 +486,14 @@ After building instructions, signer metadata is stripped before passing to `send
 
 ### Retrieving the IDL
 
-The staking program's Anchor IDL is publicly available on-chain:
+The staking program's Anchor IDL is [stored on-chain](https://solana.com/developers/guides/advanced/idls#storing-idls-on-chain), which is how explorer like Solscan are able to display it. You can fetch it directly using the Anchor CLI:
 
-1. Go to [Solscan - Program IDL](https://solscan.io/account/SKRskrmtL83pcL4YqLWt6iPefDqwXQWHSw9S9vz94BZ#programIdl)
-2. Scroll to the bottom of the page
-3. Click "Program IDL"
-4. Download the JSON file
-5. Save it to `program/idl.json` in the project root
+```bash
+mkdir -p program
+anchor idl fetch -o program/idl.json SKRskrmtL83pcL4YqLWt6iPefDqwXQWHSw9S9vz94BZ --provider.cluster mainnet
+```
+
+This downloads the IDL from the program's on-chain IDL account and saves it to `program/idl.json`.
 
 The IDL defines all instructions, accounts, types, events, and error codes for the staking program.
 

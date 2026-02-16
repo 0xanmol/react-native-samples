@@ -11,6 +11,7 @@ For feedback and suggestions, please open an issue on this repository.
 | **Settle** <br><br>[> Browse](/settle) | Expenses splitting app showcasing functionality to connect wallet and repay debts with transfer transactions <br><br>• Beginner friendly<br>• Connect wallet<br>• Send and View Transactions|
 | **skr address resolution** <br><br>[> Browse](/skr-address-resolution) | Application to showcase bidirectional domain lookup <br><br>• Beginner friendly<br>• Connect wallet<br>• Domain to address lookup aka example.skr → wallet address<br>• Address to domain reverse lookup aka wallet address → example.skr|
 | **Cause Pots** <br><br>[> Browse](/cause-pots) | Decentralized group savings application built on Solana demonstrating Anchor smart contracts with custom PDAs <br><br>• Intermediate level<br>• Integrate Smart Contract<br>• Create and Sign custom Tx/ix<br>• Friend management with .skr domain resolution|
+| **StakeSKR** <br><br>[> Browse](/skr-staking) | SKR token staking app demonstrating Codama client generation and the full staking lifecycle on Solana mainnet <br><br>• Intermediate level<br>• Codama-generated TypeScript clients from Anchor IDL<br>• Stake, Unstake, Cancel Unstake, and Withdraw<br>• Solana Web3.js v2 (`@solana/kit`)|
 
 
 ## 🛠️ Prerequisites
