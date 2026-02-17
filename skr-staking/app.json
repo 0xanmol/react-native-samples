@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "scheme": "acme",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "output": "static"
+    },
+    "name": "StakeSKR",
+    "slug": "StakeSKR",
+    "android": {
+      "package": "com.stakeskr.app"
+    },
+    "ios": {
+      "bundleIdentifier": "com.stakeskr.app"
+    }
+  }
+}
