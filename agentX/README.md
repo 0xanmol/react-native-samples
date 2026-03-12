@@ -14,19 +14,19 @@ agentX is a **demo application** showcasing how to build a persistent communicat
 
 | Login | Connect Wallet |
 |---|---|
-| <img src="https://github.com/user-attachments/assets/LOGIN_URL" alt="Login" height="360" /> | <img src="https://github.com/user-attachments/assets/CONNECT_WALLET_URL" alt="Connect Wallet" height="360" /> |
+| <img height="360" alt="login" src="https://github.com/user-attachments/assets/63c41255-10cf-43b0-b8e2-676066854f31" />| <img height="360" alt="connect_wallet" src="https://github.com/user-attachments/assets/ccb5cb36-bbd6-41e5-9c78-23cb715de0ea" />|
 
 **Chat with the agent and set a price alert**
 
 | Chat & Price Alert |
 |---|
-| <img src="https://github.com/user-attachments/assets/CHAT_URL" alt="Chat and Price Alert" height="360" /> |
+| <img height="360" alt="chat screen" src="https://github.com/user-attachments/assets/8d95e164-7d79-43bf-940b-58fa7f075742" />|
 
 **Agent fires alert — push notification and transaction signing**
 
 | Push Notification | Sign Transaction | MWA Approval |
 |---|---|---|
-| <img src="https://github.com/user-attachments/assets/NOTIFICATION_URL" alt="Push Notification" height="360" /> | <img src="https://github.com/user-attachments/assets/SIGN_TX_URL" alt="Sign Transaction" height="360" /> | <img src="https://github.com/user-attachments/assets/MWA_POPUP_URL" alt="MWA Approval" height="360" /> |
+| <img height="360" alt="notification recivied" src="https://github.com/user-attachments/assets/d6c397a4-b294-49e2-b9a0-dfe530ef7299" />| <img height="360" alt="sign tx upon opening notif" src="https://github.com/user-attachments/assets/173d2b6f-c501-4460-bca7-c07406f44c26" />| <img height="360" alt="mwa pop up to sign tx" src="https://github.com/user-attachments/assets/d3d8c51b-17a9-4af8-acfd-7a67cf6b505c" />|
 
 **Key Features:**
 - Chat-based AI agent — describe trading strategies in plain English ("buy SOL when it drops below $150")
