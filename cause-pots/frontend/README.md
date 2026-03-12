@@ -48,14 +48,12 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:3000/api
 
 # Solana Configuration
 EXPO_PUBLIC_SOLANA_CLUSTER=devnet
-EXPO_PUBLIC_PROGRAM_ID=CTtGEyhWsub71K9bDKJZbaBDNbqNk54fUuh4pLB8M5sR
 ```
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `EXPO_PUBLIC_API_URL` | Backend API endpoint | `http://10.0.2.2:3000/api` (Android emulator) |
 | `EXPO_PUBLIC_SOLANA_CLUSTER` | Solana network | `devnet` |
-| `EXPO_PUBLIC_PROGRAM_ID` | Deployed Anchor program ID | `CTtGEyhWsub71K9bDKJZbaBDNbqNk54fUuh4pLB8M5sR` |
 
 **Note:** `10.0.2.2` is the special IP for Android emulator to access host machine's localhost. For physical devices, use your computer's local IP address (e.g., `192.168.1.100`).
 

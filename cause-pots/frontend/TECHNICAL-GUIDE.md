@@ -146,7 +146,6 @@ npx expo run:android
 # .env
 EXPO_PUBLIC_API_URL=http://10.0.2.2:3000/api
 EXPO_PUBLIC_SOLANA_CLUSTER=devnet
-EXPO_PUBLIC_PROGRAM_ID=CTtGEyhWsub71K9bDKJZbaBDNbqNk54fUuh4pLB8M5sR
 ```
 
 **10.0.2.2**: Android emulator's IP for host machine's localhost
