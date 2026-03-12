@@ -84,7 +84,7 @@ server/src/
 ├── agent/
 │   ├── AgentRunner.ts          # Core agent loop — serialized queue + streaming ⭐
 │   └── tools/
-│       └── solana.ts           # 4 trading tools available to Claude ⭐
+│       └── solana.ts           # 4 trading tools available to the agent ⭐
 ├── routes/
 │   ├── agentRouter.ts          # REST prompt + history endpoints
 │   ├── wsRouter.ts             # WebSocket connection handler ⭐
@@ -110,22 +110,14 @@ server/src/
 
 ### Key Integration Points
 
-- **[AgentRunner.ts](src/agent/AgentRunner.ts)** — The agent orchestrator. All Claude interactions go through here.
+- **[AgentRunner.ts](src/agent/AgentRunner.ts)** — The agent orchestrator. All LLM interactions go through here.
 - **[wsRouter.ts](src/routes/wsRouter.ts)** — The WebSocket handler. All real-time communication passes through here.
 - **[priceMonitor.ts](src/jobs/priceMonitor.ts)** — The autonomous loop. This is what makes the system "agentic" without user interaction.
-- **[solana.ts](src/agent/tools/solana.ts)** — The tools Claude can call. This is where agent decisions become on-chain actions.
+- **[solana.ts](src/agent/tools/solana.ts)** — The tools the agent can call. This is where agent decisions become on-chain actions.
 
 ---
 
 ## Agent Architecture
-
-### Why Claude Sonnet 4.6?
-
-Claude was chosen over alternatives for three reasons specific to this use case:
-
-1. **Native tool-calling** — Anthropic's SDK provides structured tool definitions with full TypeScript types. The agent can chain `getSolanaPrice` → `createPriceAlert` → `queueSigningRequest` reliably without brittle prompt engineering.
-2. **Reliable multi-step reasoning** — The agent must reason: "the user said buy the dip → price is now at the target → check for duplicate pending requests → build the transaction → send reason to user". This requires stable multi-hop tool usage.
-3. **Vercel AI SDK compatibility** — `streamText` from the `ai` package provides a clean async iterator over the full event stream (text deltas, tool calls, tool results), making streaming to WebSocket clients straightforward.
 
 ### Serialized Prompt Queue
 
@@ -194,12 +186,8 @@ The agent's system prompt (in `AgentRunner.ts`) establishes:
 
 Sessions group related messages for conversation context:
 
-- **User sessions**: UUID generated on first app launch, persisted in `AsyncStorage`. Passed in every prompt so Claude sees full history.
-- **Autonomous sessions**: created by the price monitor with an `alert_<id>` prefix (e.g., `alert_3`). These are separate from the user's chat session — they don't appear in the chat history.
-
-**Why separate autonomous sessions?**
-
-When a price alert fires at 3am, you don't want "SOL dropped to $142, I'm executing the swap" to appear as a user message in the chat log. The agent's autonomous session produces internal reasoning, but only the signing request appears in the UI.
+- **User sessions**: UUID generated on first app launch, persisted in `AsyncStorage`. Passed in every prompt so the agent sees full conversation history.
+- **Autonomous sessions**: created by the price monitor with an `alert_<id>` prefix (e.g., `alert_3`). Separate from the user's chat session — they don't appear in chat history. When an alert fires, the agent's internal reasoning stays out of the chat log; only the signing request surfaces in the UI.
 
 ---
 
@@ -215,12 +203,6 @@ Header: X-Api-Key: <API_KEY>
 Authentication is checked on upgrade. Invalid key → connection closed with code `1008 Policy Violation`.
 
 On successful connect, the server re-delivers any non-expired pending signing requests immediately. This handles the case where the user opens the app to find a tx waiting.
-
-### Why WebSocket Over REST Polling?
-
-- **Streaming**: agent text deltas arrive as Claude generates them — polling would require buffering and introduce latency
-- **Server-initiated push**: the server needs to push `tx_signing_request` messages asynchronously (triggered by price monitor, not by a user request). Polling can't do this efficiently.
-- **Tool call visibility**: `tool_call`/`tool_result` events fire during the agent's run, not at response-completion time. These can't be returned in a single REST response.
 
 ### Messages: Client → Server
 
@@ -304,7 +286,7 @@ Server replies with `{ "type": "pong" }`. Send this periodically to keep the con
 
 #### `agent_delta` — streaming text token
 
-Fired for each text token as Claude generates its response. Append these to the current message bubble to create a live typing effect.
+Fired for each text token as the agent generates its response. Append these to the current message bubble to create a live typing effect.
 
 ```json
 {
@@ -562,7 +544,7 @@ Fetch all messages across all sessions, ordered oldest-first. Used to hydrate th
 
 ### `POST /orders/alert`
 
-Create a price alert. When SOL crosses the target, the server autonomously invokes Claude, which builds a Jupiter swap tx and pushes it to the mobile app.
+Create a price alert. When SOL crosses the target, the server autonomously invokes the agent, which builds a Jupiter swap tx and pushes it to the mobile app.
 
 **Request:**
 ```json
@@ -629,7 +611,7 @@ Register a mobile device's Expo push token. Call on every app launch. Also accep
 
 ## Agent Tools Reference
 
-These are the tools available to Claude. All live data comes from the price monitor cache (CoinGecko) and Jupiter API (mainnet).
+These are the tools available to the agent. All live data comes from the price monitor cache (CoinGecko) and Jupiter API (mainnet).
 
 ---
 
@@ -646,8 +628,6 @@ Returns the current price of SOL or USDC from the in-memory price cache.
 ```json
 { "symbol": "SOL", "price": 185.42, "currency": "USD" }
 ```
-
-**Why a cache instead of live fetch?** Jupiter's API rate limits aggressive polling. The price monitor polls CoinGecko on a fixed schedule (60s) and the result is shared across all tool calls and price checks. This avoids hammering external APIs while keeping prices reasonably fresh.
 
 ---
 
@@ -672,7 +652,7 @@ Registers a price alert in PostgreSQL. The price monitor checks active alerts on
 { "success": true, "alert_id": 3, ... }
 ```
 
-**When does this get called?** When the user says something like "buy SOL if it drops below $150" in the chat. Claude interprets the intent and calls this tool with the appropriate parameters.
+**When does this get called?** When the user says something like "buy SOL if it drops below $150" in the chat. The agent interprets the intent and calls this tool with the appropriate parameters.
 
 ---
 
@@ -762,7 +742,7 @@ Configured trade: swap 1 SOL → USDC
 Decide whether to queue a signing request.
 ```
 
-Claude sees this in a fresh session (`alert_3`) and typically:
+The agent sees this in a fresh session (`alert_3`) and typically:
 1. Calls `getSolanaPrice` to confirm the live price
 2. Calls `getPendingSigningRequests` to check for existing pending txs
 3. Calls `queueSigningRequest` if no duplicates exist
@@ -772,13 +752,6 @@ Claude sees this in a fresh session (`alert_3`) and typically:
 ## Jupiter Integration
 
 **File:** [src/solana/buildTx.ts](src/solana/buildTx.ts)
-
-### Why Jupiter?
-
-Jupiter is the leading DEX aggregator on Solana. Using Jupiter means:
-- Best execution price across all Solana liquidity pools automatically
-- No need to integrate individual DEXes (Raydium, Orca, etc.)
-- A single API that handles routing and transaction construction
 
 ### Transaction Build Flow
 
@@ -799,9 +772,7 @@ For a swap (e.g., 1 SOL → USDC):
 4. Include in tx_signing_request WS message as serialized_tx
 ```
 
-### Why Base64 for Transport?
-
-`VersionedTransaction` is a binary format. JSON only supports strings, so we base64-encode for transport. The mobile app decodes it:
+The mobile app decodes `serialized_tx` (base64-encoded binary `VersionedTransaction`):
 
 ```typescript
 // mobile: agent-provider.tsx
@@ -814,9 +785,7 @@ const signature = await signAndSendTransaction(versionedTx);
 
 Jupiter quotes embed a recent blockhash. Solana transactions expire after ~150 blocks (~90 seconds). The server sets `expires_at = now + 5 minutes` — conservative enough for the user to see and act on the notification.
 
-**Why 5 minutes if blockhash expires in ~90s?**
-
-The `expires_at` field signals when the signing request UI should be dismissed, not when the transaction itself expires on-chain. If a user tries to sign after the blockhash is stale, the Solana network will reject it. Use `POST /simulate/resend-tx` to rebuild with a fresh quote and re-push.
+`expires_at` signals when the signing request UI should be dismissed — not when the transaction expires on-chain (~90s). If the blockhash goes stale before the user signs, the Solana network will reject it. Use `POST /simulate/resend-tx` to rebuild with a fresh quote and re-push.
 
 ---
 
@@ -914,16 +883,6 @@ CREATE TABLE devices (
 );
 ```
 
-### Why PostgreSQL Instead of SQLite?
-
-- Concurrent reads/writes are safe (agent runner + HTTP handlers + price monitor all hit DB)
-- Railway provides managed Postgres with automatic `DATABASE_URL` injection
-- `NUMERIC` type avoids float precision issues with prices and lamport amounts
-
-### Why Store `wallet_address` in `devices`?
-
-Jupiter's swap API requires a `userPublicKey` to build a transaction — it's the `feePayer` for network fees. The server doesn't hold any private keys, so it needs the public key registered separately. The mobile app sends it during `POST /device/register` right after connecting the wallet.
-
 ---
 
 ## End-to-End Communication Flows
@@ -953,11 +912,11 @@ Jupiter's swap API requires a `userPublicKey` to build a transaction — it's th
      │                                     │
      │                                     │ [AgentRunner dequeues]
      │                                     │ Fetch history for session abc-123
-     │                                     │ Call streamText (Claude Sonnet 4.6)
+     │                                     │ Run agent (streamText)
      │                                     │
      │ ← { type: "tool_call",              │
      │     tool: "getSolanaPrice" }        │
-     │◄────────────────────────────────────│ Claude calls getSolanaPrice tool
+     │◄────────────────────────────────────│ agent calls getSolanaPrice
      │ (show "Fetching price...")          │
      │                                     │
      │ ← { type: "tool_result",            │
@@ -967,12 +926,12 @@ Jupiter's swap API requires a `userPublicKey` to build a transaction — it's th
      │                                     │
      │ ← { type: "tool_call",              │
      │     tool: "createPriceAlert" }      │
-     │◄────────────────────────────────────│ Claude calls createPriceAlert
+     │◄────────────────────────────────────│ agent calls createPriceAlert
      │ (show "Setting up alert...")        │ → alert stored in DB
      │                                     │
      │ ← { type: "agent_delta",            │
      │     text: "Done! I've set " }       │
-     │◄────────────────────────────────────│ Claude streams response
+     │◄────────────────────────────────────│ agent streams response
      │ (append to bubble)                  │
      │                                     │
      │ ← { type: "agent_done",             │
