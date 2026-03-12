@@ -217,20 +217,6 @@ npx wscat -c ws://localhost:8080/ws -H "X-Api-Key: helloworld"
 
 ---
 
-## Deploying to Railway
-
-1. Push repo to GitHub.
-2. In [Railway](https://railway.app): **New Project → Deploy from GitHub repo**.
-3. Select the repo. Railway auto-detects `railway.json`.
-4. Add the **Postgres** plugin: **+ New → Database → PostgreSQL**. `DATABASE_URL` is injected automatically.
-5. Set env vars: `API_KEY` and `ANTHROPIC_API_KEY`.
-6. Click **Deploy**. Railway runs `npm run build` then `node dist/index.js`.
-7. Verify: `GET https://<your-app>.railway.app/health` → `{"ok":true}`.
-
-No persistent volume needed — all state is in Postgres.
-
----
-
 ## Common Issues
 
 ### `ECONNREFUSED` connecting to Postgres
